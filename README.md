@@ -17,6 +17,11 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 - **Dynamic difficulty**: Your fire rate and enemy spawn rate are tied to your score - the better you do, the faster you shoot and the more enemies spawn!
 - **Responsive design**: The game scales to fit any screen size while maintaining the same gameplay experience.
 
+## Sound Effects
+- **p5.sound** is used for audio support.
+- **shooting.mp3** is played every time the gummy bear shoots a rainbow ball of acid.
+- **Recommended format:** MP3 (for best browser compatibility and performance).
+
 ## Controls
 - **Desktop:**
   - **Move:** Arrow Keys or WASD

@@ -1,4 +1,3 @@
-
 let player;
 let vials = [];
 let enemies = [];
@@ -8,6 +7,7 @@ const SLOGANS = ["Flower Power", "Groovy", "Far Out", "Cowabunga", "Trippy", "Gu
 let gameState = 'start'; // 'start', 'playing', 'gameOver', 'win'
 let enemySpawnCounter = 0;
 let nextLifeSpawnThreshold = 25;
+let shootingSound;
 
 // --- VIRTUAL CANVAS & PLAYABLE AREA SETUP ---
 const VIRTUAL_WIDTH = 1280;
@@ -26,6 +26,7 @@ function setup() {
   rectMode(CENTER);
   textFont('monospace');
   player = new GummyBear();
+  shootingSound = loadSound('shooting.mp3');
 }
 
 function draw() {
@@ -145,7 +146,7 @@ class GummyBear {
   update() { let effectiveScore = max(0, score); this.shootCooldown = map(effectiveScore, 0, this.scoreForMaxSpeed, this.baseShootCooldown, this.fastestShootCooldown); this.shootCooldown = constrain(this.shootCooldown, this.fastestShootCooldown, this.baseShootCooldown); }
   move() { if (keyIsDown(LEFT_ARROW) || keyIsDown(65) || (isMobile && touchControls.dpad.isLeft)) this.x -= this.speed; if (keyIsDown(RIGHT_ARROW) || keyIsDown(68) || (isMobile && touchControls.dpad.isRight)) this.x += this.speed; if (keyIsDown(UP_ARROW) || keyIsDown(87) || (isMobile && touchControls.dpad.isUp)) this.y -= this.speed; if (keyIsDown(DOWN_ARROW) || keyIsDown(83) || (isMobile && touchControls.dpad.isDown)) this.y += this.speed; this.x = constrain(this.x, PLAYABLE_OFFSET_X + this.w/2, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH - this.w/2); this.y = constrain(this.y, this.h / 2, VIRTUAL_HEIGHT - this.h / 2); this.hue = (this.hue + 1) % 360; }
   display() { push(); colorMode(HSB, 360, 100, 100, 1); noStroke(); fill(this.hue, 80, 100, 0.8); ellipse(this.x, this.y, this.w, this.h); ellipse(this.x - this.w * 0.3, this.y - this.h * 0.4, this.w * 0.4); ellipse(this.x + this.w * 0.3, this.y - this.h * 0.4, this.w * 0.4); pop(); }
-  splash() { if (frameCount - this.lastShotFrame > this.shootCooldown) { vials.push(new AcidVile(this.x, this.y - this.h / 4)); this.lastShotFrame = frameCount; } }
+  splash() { if (frameCount - this.lastShotFrame > this.shootCooldown) { vials.push(new AcidVile(this.x, this.y - this.h / 4)); this.lastShotFrame = frameCount; if (shootingSound && shootingSound.isLoaded()) shootingSound.play(); } }
   takeDamage() { this.lives--; }
   gainLife() { if (this.lives < this.maxLives) this.lives++; }
   isCollidingWith(other) { return dist(this.x, this.y, other.x, other.y) < this.w / 2 + other.w / 2; }
