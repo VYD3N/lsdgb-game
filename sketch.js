@@ -48,7 +48,7 @@ function calculateScaling() {
 function windowResized() { resizeCanvas(windowWidth, windowHeight); calculateScaling(); }
 
 function setupTouchControls() {
-    let dpadRadius = 140; let fireRadius = 120; let padding = 20;
+    let dpadRadius = 160; let fireRadius = 140; let padding = 10;
     touchControls = {
         dpad: { x: dpadRadius + padding, y: VIRTUAL_HEIGHT - dpadRadius - padding, radius: dpadRadius, isUp: false, isDown: false, isLeft: false, isRight: false },
         fireButton: { x: VIRTUAL_WIDTH - fireRadius - padding, y: VIRTUAL_HEIGHT - fireRadius - padding, r: fireRadius, active: false }
