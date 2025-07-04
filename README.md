@@ -18,14 +18,14 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
   - **Shoot:** Hold SPACEBAR to auto-shoot vibes
   - **Start/Restart:** Click the button or press ENTER
 - **Mobile/Touch:**
-  - **Move:** Touch and drag to move your gummy bear
-  - **Shoot:** Tap anywhere on screen to shoot
+  - **Move:** Use the on-screen D-pad (left side of screen)
+  - **Shoot:** Tap the red fire button (right side of screen)
   - **Start/Restart:** Tap the button or press ENTER
 
 ## How to Play
 1. **Start the game** by clicking "START REVOLUTION" or pressing ENTER.
-2. **Move** your gummy bear to dodge enemies and collect life gummies.
-3. **Shoot** acid vials to convert enemies into hippies.
+2. **Move** your gummy bear using keyboard (desktop) or on-screen D-pad (mobile) to dodge enemies and collect life gummies.
+3. **Shoot** acid vials using spacebar (desktop) or the red fire button (mobile) to convert enemies into hippies.
 4. **Collect 3 lives** to win. If you lose all your lives or your score drops below -5, the game is over.
 5. **Watch your fire rate**: As your score increases, you'll shoot faster and enemies will spawn more frequently!
 
@@ -37,7 +37,7 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
   - **Suits**: Convert to hippies with 1 hit
   - **Cops**: Require 3 hits to convert, and can revert hippies back to angry suits!
 - **Responsive Canvas**: Game scales perfectly on any screen size
-- **Touch Support**: Full mobile and tablet support with touch controls
+- **Touch Support**: Full mobile and tablet support with on-screen D-pad and fire button
 
 ## Local Setup
 1. Clone this repository:
