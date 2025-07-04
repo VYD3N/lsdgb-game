@@ -24,6 +24,11 @@
         display: block; 
         touch-action: none;
       }
+      /*
+        NOTE: The D-pad and fire button are drawn by p5.js in sketch.js.
+        They are positioned in the bottom left and right corners, out of the play area,
+        for optimal mobile UX. Adjust their positions in sketch.js if needed.
+      */
       /* Enforce landscape mode on mobile */
       @media only screen and (orientation:portrait) {
         body::before {

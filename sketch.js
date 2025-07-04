@@ -59,12 +59,11 @@ function windowResized() { resizeCanvas(windowWidth, windowHeight); calculateSca
 function setupTouchControls() {
     touchControls = {
         dpad: {
-            x: 180, y: VIRTUAL_HEIGHT - 180,
-            radius: 120,
-            deadZoneRadius: 30,
+            x: 140, y: VIRTUAL_HEIGHT - 140, // Moved lower and to the left
+            radius: 130, // Made larger
             isUp: false, isDown: false, isLeft: false, isRight: false
         },
-        fireButton: { x: VIRTUAL_WIDTH - 150, y: VIRTUAL_HEIGHT - 150, r: 100, active: false }
+        fireButton: { x: VIRTUAL_WIDTH - 140, y: VIRTUAL_HEIGHT - 140, r: 110, active: false } // Moved lower and to the right, made larger
     };
 }
 
@@ -87,14 +86,13 @@ function handleTouchInput() {
 
         // Check D-pad
         if (dist(touchX, touchY, dpad.x, dpad.y) < dpad.radius) {
+            // *** NEW LOGIC: NO DEAD ZONE ***
             let vec = createVector(touchX - dpad.x, touchY - dpad.y);
-            if (vec.mag() > dpad.deadZoneRadius) {
-                let angle = vec.heading(); // p5 vector angle
-                if (angle > -PI * 0.75 && angle < -PI * 0.25) dpad.isUp = true;
-                if (angle > PI * 0.25 && angle < PI * 0.75) dpad.isDown = true;
-                if (angle > PI * 0.75 || angle < -PI * 0.75) dpad.isLeft = true;
-                if (angle > -PI * 0.25 && angle < PI * 0.25) dpad.isRight = true;
-            }
+            let angle = vec.heading();
+            if (angle > -PI * 0.75 && angle < -PI * 0.25) dpad.isUp = true;
+            if (angle > PI * 0.25 && angle < PI * 0.75) dpad.isDown = true;
+            if (angle > PI * 0.75 || angle < -PI * 0.75) dpad.isLeft = true;
+            if (angle > -PI * 0.25 && angle < PI * 0.25) dpad.isRight = true;
         }
     }
 }
@@ -109,22 +107,20 @@ function drawTouchControls() {
     // D-Pad Base Circle
     fill(255, 255, 255, 20);
     ellipse(dpad.x, dpad.y, dpad.radius * 2);
+    // Small center anchor
     fill(255, 255, 255, 25);
-    ellipse(dpad.x, dpad.y, dpad.deadZoneRadius * 2);
+    ellipse(dpad.x, dpad.y, 40);
     
     // Directional Arrows for visual feedback
-    // UP
+    let arrowDist = dpad.radius * 0.5;
     fill(255, 255, 255, dpad.isUp ? 80 : 40);
-    triangle(dpad.x, dpad.y - 40 - arrowSize/2, dpad.x - arrowSize, dpad.y - 40 + arrowSize/2, dpad.x + arrowSize, dpad.y - 40 + arrowSize/2);
-    // DOWN
+    triangle(dpad.x, dpad.y - arrowDist - arrowSize/2, dpad.x - arrowSize, dpad.y - arrowDist + arrowSize/2, dpad.x + arrowSize, dpad.y - arrowDist + arrowSize/2);
     fill(255, 255, 255, dpad.isDown ? 80 : 40);
-    triangle(dpad.x, dpad.y + 40 + arrowSize/2, dpad.x - arrowSize, dpad.y + 40 - arrowSize/2, dpad.x + arrowSize, dpad.y + 40 - arrowSize/2);
-    // LEFT
+    triangle(dpad.x, dpad.y + arrowDist + arrowSize/2, dpad.x - arrowSize, dpad.y + arrowDist - arrowSize/2, dpad.x + arrowSize, dpad.y + arrowDist - arrowSize/2);
     fill(255, 255, 255, dpad.isLeft ? 80 : 40);
-    triangle(dpad.x - 40 - arrowSize/2, dpad.y, dpad.x - 40 + arrowSize/2, dpad.y - arrowSize, dpad.x - 40 + arrowSize/2, dpad.y + arrowSize);
-    // RIGHT
+    triangle(dpad.x - arrowDist - arrowSize/2, dpad.y, dpad.x - arrowDist + arrowSize/2, dpad.y - arrowSize, dpad.x - arrowDist + arrowSize/2, dpad.y + arrowSize);
     fill(255, 255, 255, dpad.isRight ? 80 : 40);
-    triangle(dpad.x + 40 + arrowSize/2, dpad.y, dpad.x + 40 - arrowSize/2, dpad.y - arrowSize, dpad.x + 40 - arrowSize/2, dpad.y + arrowSize);
+    triangle(dpad.x + arrowDist + arrowSize/2, dpad.y, dpad.x + arrowDist - arrowSize/2, dpad.y - arrowSize, dpad.x + arrowDist - arrowSize/2, dpad.y + arrowSize);
 
     // Fire Button
     let fireBtn = touchControls.fireButton;
