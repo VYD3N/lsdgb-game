@@ -3,7 +3,7 @@
 A psychedelic arcade browser game inspired by classic shooters and trippy vibes.
 
 ## Play Online
-You can play the game by opening `index.html` in your browser.
+You can play the game by opening `index.html` in your browser on desktop, mobile, or tablet devices.
 
 ## Game Description
 - **LSDGB** ("LSD Gummy Bear") is a fast-paced, colorful shooter where you play as a groovy gummy bear fighting off conformity!
@@ -13,9 +13,14 @@ You can play the game by opening `index.html` in your browser.
 - **Responsive design**: The game scales to fit any screen size while maintaining the same gameplay experience.
 
 ## Controls
-- **Move:** Arrow Keys or WASD
-- **Shoot:** Hold SPACEBAR to auto-shoot vibes
-- **Start/Restart:** Click the button or press ENTER
+- **Desktop:**
+  - **Move:** Arrow Keys or WASD
+  - **Shoot:** Hold SPACEBAR to auto-shoot vibes
+  - **Start/Restart:** Click the button or press ENTER
+- **Mobile/Touch:**
+  - **Move:** Touch and drag to move your gummy bear
+  - **Shoot:** Tap anywhere on screen to shoot
+  - **Start/Restart:** Tap the button or press ENTER
 
 ## How to Play
 1. **Start the game** by clicking "START REVOLUTION" or pressing ENTER.
@@ -32,6 +37,7 @@ You can play the game by opening `index.html` in your browser.
   - **Suits**: Convert to hippies with 1 hit
   - **Cops**: Require 3 hits to convert, and can revert hippies back to angry suits!
 - **Responsive Canvas**: Game scales perfectly on any screen size
+- **Touch Support**: Full mobile and tablet support with touch controls
 
 ## Local Setup
 1. Clone this repository:
