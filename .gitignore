@@ -4,6 +4,7 @@
 # Only include these specific files
 !index.html
 !sketch.js
+!README.md
 !.gitignore
 
 # Exclude common development files
