@@ -53,31 +53,24 @@ function calculateScaling() {
   offsetX = (windowWidth - VIRTUAL_WIDTH * scaleFactor) / 2;
   offsetY = (windowHeight - VIRTUAL_HEIGHT * scaleFactor) / 2;
 }
-function getVirtualMouseX() { return (mouseX - offsetX) / scaleFactor; }
-function getVirtualMouseY() { return (mouseY - offsetY) / scaleFactor; }
 function windowResized() { resizeCanvas(windowWidth, windowHeight); calculateScaling(); }
 
 // --- Touch Control Setup & Handling ---
 function setupTouchControls() {
-    let dpadSize = 80;
-    let dpadGap = 5;
-    let dpadX = 150;
-    let dpadY = VIRTUAL_HEIGHT - 150;
-    
     touchControls = {
         dpad: {
-            up:    { x: dpadX, y: dpadY - dpadSize - dpadGap, w: dpadSize, h: dpadSize, active: false },
-            down:  { x: dpadX, y: dpadY + dpadSize + dpadGap, w: dpadSize, h: dpadSize, active: false },
-            left:  { x: dpadX - dpadSize - dpadGap, y: dpadY, w: dpadSize, h: dpadSize, active: false },
-            right: { x: dpadX + dpadSize + dpadGap, y: dpadY, w: dpadSize, h: dpadSize, active: false }
+            x: 180, y: VIRTUAL_HEIGHT - 180,
+            radius: 120,
+            deadZoneRadius: 30,
+            isUp: false, isDown: false, isLeft: false, isRight: false
         },
         fireButton: { x: VIRTUAL_WIDTH - 150, y: VIRTUAL_HEIGHT - 150, r: 100, active: false }
     };
 }
 
 function handleTouchInput() {
-    // Reset all active states
-    for (let dir in touchControls.dpad) { touchControls.dpad[dir].active = false; }
+    let dpad = touchControls.dpad;
+    dpad.isUp = dpad.isDown = dpad.isLeft = dpad.isRight = false;
     touchControls.fireButton.active = false;
 
     if (!isMobile) return;
@@ -86,19 +79,22 @@ function handleTouchInput() {
         let touchX = (touch.x - offsetX) / scaleFactor;
         let touchY = (touch.y - offsetY) / scaleFactor;
 
-        // Check D-pad
-        for (let dir in touchControls.dpad) {
-            let button = touchControls.dpad[dir];
-            if (touchX > button.x - button.w / 2 && touchX < button.x + button.w / 2 &&
-                touchY > button.y - button.h / 2 && touchY < button.y + button.h / 2) {
-                button.active = true;
-            }
-        }
-        
         // Check Fire button
         let fireBtn = touchControls.fireButton;
         if (dist(touchX, touchY, fireBtn.x, fireBtn.y) < fireBtn.r) {
             fireBtn.active = true;
+        }
+
+        // Check D-pad
+        if (dist(touchX, touchY, dpad.x, dpad.y) < dpad.radius) {
+            let vec = createVector(touchX - dpad.x, touchY - dpad.y);
+            if (vec.mag() > dpad.deadZoneRadius) {
+                let angle = vec.heading(); // p5 vector angle
+                if (angle > -PI * 0.75 && angle < -PI * 0.25) dpad.isUp = true;
+                if (angle > PI * 0.25 && angle < PI * 0.75) dpad.isDown = true;
+                if (angle > PI * 0.75 || angle < -PI * 0.75) dpad.isLeft = true;
+                if (angle > -PI * 0.25 && angle < PI * 0.25) dpad.isRight = true;
+            }
         }
     }
 }
@@ -107,13 +103,29 @@ function drawTouchControls() {
     if (!isMobile) return;
     
     noStroke();
-    // D-Pad
-    for (let dir in touchControls.dpad) {
-        let button = touchControls.dpad[dir];
-        fill(255, 255, 255, button.active ? 80 : 40);
-        rect(button.x, button.y, button.w, button.h, 10);
-    }
+    let dpad = touchControls.dpad;
+    let arrowSize = 30;
+
+    // D-Pad Base Circle
+    fill(255, 255, 255, 20);
+    ellipse(dpad.x, dpad.y, dpad.radius * 2);
+    fill(255, 255, 255, 25);
+    ellipse(dpad.x, dpad.y, dpad.deadZoneRadius * 2);
     
+    // Directional Arrows for visual feedback
+    // UP
+    fill(255, 255, 255, dpad.isUp ? 80 : 40);
+    triangle(dpad.x, dpad.y - 40 - arrowSize/2, dpad.x - arrowSize, dpad.y - 40 + arrowSize/2, dpad.x + arrowSize, dpad.y - 40 + arrowSize/2);
+    // DOWN
+    fill(255, 255, 255, dpad.isDown ? 80 : 40);
+    triangle(dpad.x, dpad.y + 40 + arrowSize/2, dpad.x - arrowSize, dpad.y + 40 - arrowSize/2, dpad.x + arrowSize, dpad.y + 40 - arrowSize/2);
+    // LEFT
+    fill(255, 255, 255, dpad.isLeft ? 80 : 40);
+    triangle(dpad.x - 40 - arrowSize/2, dpad.y, dpad.x - 40 + arrowSize/2, dpad.y - arrowSize, dpad.x - 40 + arrowSize/2, dpad.y + arrowSize);
+    // RIGHT
+    fill(255, 255, 255, dpad.isRight ? 80 : 40);
+    triangle(dpad.x + 40 + arrowSize/2, dpad.y, dpad.x + 40 - arrowSize/2, dpad.y - arrowSize, dpad.x + 40 - arrowSize/2, dpad.y + arrowSize);
+
     // Fire Button
     let fireBtn = touchControls.fireButton;
     fill(255, 0, 0, fireBtn.active ? 100 : 50);
@@ -126,23 +138,12 @@ function runGame() {
   handleTouchInput();
   player.update();
   let spawnDelay = floor(map(player.shootCooldown, player.fastestShootCooldown, player.baseShootCooldown, 20, 90));
-  if (frameCount % spawnDelay === 0) {
-    enemySpawnCounter++;
-    enemies.push(enemySpawnCounter > 0 && enemySpawnCounter % 25 === 0 ? new Cop() : new Suit());
-  }
-  if (score >= nextLifeSpawnThreshold) {
-    lifeGummies.push(new LifeGummy());
-    nextLifeSpawnThreshold += 25;
-  }
-  player.move();
-  player.display();
+  if (frameCount % spawnDelay === 0) { enemySpawnCounter++; enemies.push(enemySpawnCounter > 0 && enemySpawnCounter % 25 === 0 ? new Cop() : new Suit()); }
+  if (score >= nextLifeSpawnThreshold) { lifeGummies.push(new LifeGummy()); nextLifeSpawnThreshold += 25; }
+  player.move(); player.display();
   if (keyIsDown(32) || touchControls.fireButton.active) { player.splash(); }
   for (let i = vials.length - 1; i >= 0; i--) { vials[i].update(); vials[i].display(); if (vials[i].isOffscreen()) vials.splice(i, 1); }
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    enemies[i].update(player); enemies[i].display();
-    if (enemies[i].shouldBeRemoved()) { enemies.splice(i, 1); continue; }
-    if (enemies[i].isOffscreen()) { if (enemies[i].state !== 'hippie') score--; enemies.splice(i, 1); }
-  }
+  for (let i = enemies.length - 1; i >= 0; i--) { enemies[i].update(player); enemies[i].display(); if (enemies[i].shouldBeRemoved()) { enemies.splice(i, 1); continue; } if (enemies[i].isOffscreen()) { if (enemies[i].state !== 'hippie') score--; enemies.splice(i, 1); } }
   for (let i = lifeGummies.length - 1; i >= 0; i--) { lifeGummies[i].update(); lifeGummies[i].display(); if (lifeGummies[i].isOffscreen()) lifeGummies.splice(i, 1); }
   handleCollisions();
   if (score < -5) gameState = 'gameOver';
@@ -151,8 +152,9 @@ function runGame() {
 }
 
 function advanceGameState() {
-  let vX = getVirtualMouseX(); let vY = getVirtualMouseY();
+  let vX, vY;
   if(touches.length > 0) { vX = (touches[0].x - offsetX) / scaleFactor; vY = (touches[0].y - offsetY) / scaleFactor; }
+  else { vX = getVirtualMouseX(); vY = getVirtualMouseY(); }
 
   if (gameState === 'start') {
     let btnX = VIRTUAL_WIDTH / 2, btnY = VIRTUAL_HEIGHT / 2 + 100, btnW = 400, btnH = 90;
@@ -188,10 +190,10 @@ class GummyBear {
   constructor() { this.x = VIRTUAL_WIDTH / 2; this.y = VIRTUAL_HEIGHT - 80; this.w = 50; this.h = 60; this.speed = 8; this.hue = random(360); this.lives = 1; this.maxLives = 3; this.baseShootCooldown = 35; this.fastestShootCooldown = 5; this.scoreForMaxSpeed = 50; this.shootCooldown = this.baseShootCooldown; this.lastShotFrame = 0; }
   update() { let effectiveScore = max(0, score); this.shootCooldown = map(effectiveScore, 0, this.scoreForMaxSpeed, this.baseShootCooldown, this.fastestShootCooldown); this.shootCooldown = constrain(this.shootCooldown, this.fastestShootCooldown, this.baseShootCooldown); }
   move() {
-    if (keyIsDown(LEFT_ARROW) || keyIsDown(65) || (isMobile && touchControls.dpad.left.active)) this.x -= this.speed;
-    if (keyIsDown(RIGHT_ARROW) || keyIsDown(68) || (isMobile && touchControls.dpad.right.active)) this.x += this.speed;
-    if (keyIsDown(UP_ARROW) || keyIsDown(87) || (isMobile && touchControls.dpad.up.active)) this.y -= this.speed;
-    if (keyIsDown(DOWN_ARROW) || keyIsDown(83) || (isMobile && touchControls.dpad.down.active)) this.y += this.speed;
+    if (keyIsDown(LEFT_ARROW) || keyIsDown(65) || (isMobile && touchControls.dpad.isLeft)) this.x -= this.speed;
+    if (keyIsDown(RIGHT_ARROW) || keyIsDown(68) || (isMobile && touchControls.dpad.isRight)) this.x += this.speed;
+    if (keyIsDown(UP_ARROW) || keyIsDown(87) || (isMobile && touchControls.dpad.isUp)) this.y -= this.speed;
+    if (keyIsDown(DOWN_ARROW) || keyIsDown(83) || (isMobile && touchControls.dpad.isDown)) this.y += this.speed;
     this.x = constrain(this.x, this.w / 2, VIRTUAL_WIDTH - this.w / 2); this.y = constrain(this.y, this.h / 2, VIRTUAL_HEIGHT - this.h / 2); this.hue = (this.hue + 1) % 360;
   }
   display() { push(); colorMode(HSB, 360, 100, 100, 1); noStroke(); fill(this.hue, 80, 100, 0.8); ellipse(this.x, this.y, this.w, this.h); ellipse(this.x - this.w * 0.3, this.y - this.h * 0.4, this.w * 0.4); ellipse(this.x + this.w * 0.3, this.y - this.h * 0.4, this.w * 0.4); pop(); }
