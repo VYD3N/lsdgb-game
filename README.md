@@ -7,6 +7,9 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 
 ## Game Description
 - **LSDGB** ("LSD Gummy Bear") is a fast-paced, colorful shooter where you play as a groovy gummy bear fighting off conformity!
+- **4:3 Playable Area:** The game action is strictly confined to a central 4:3 area (960x720) within a widescreen 16:9 canvas (1280x720). This ensures the controls never overlap the playfield.
+- **Dedicated Sidebars:** The left and right sides of the screen are reserved for the D-pad and fire button, keeping them completely outside the action.
+- **Visual Boundaries:** Faint lines mark the edges of the playfield for clarity.
 - Convert suits and cops into hippies with your acid vials.
 - Collect life gummies to increase your lives. Reach 3 lives to win!
 - **Dynamic difficulty**: Your fire rate and enemy spawn rate are tied to your score - the better you do, the faster you shoot and the more enemies spawn!
@@ -18,8 +21,8 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
   - **Shoot:** Hold SPACEBAR to auto-shoot vibes
   - **Start/Restart:** Click the button or press ENTER
 - **Mobile/Touch:**
-  - **Move:** Use the large on-screen circular D-pad (bottom left corner). Touch and drag in any direction for smooth 8-way movement. There is no dead zone—movement is active anywhere inside the D-pad. To stop, simply lift your thumb.
-  - **Shoot:** Tap the red fire button (bottom right corner)
+  - **Move:** Use the large on-screen circular D-pad (in the left sidebar, outside the playfield). Touch and drag in any direction for smooth 8-way movement. There is no dead zone—movement is active anywhere inside the D-pad. To stop, simply lift your thumb.
+  - **Shoot:** Tap the red fire button (in the right sidebar, outside the playfield)
   - **Start/Restart:** Tap the button or press ENTER
 
 ## How to Play
@@ -30,6 +33,8 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 5. **Watch your fire rate**: As your score increases, you'll shoot faster and enemies will spawn more frequently!
 
 ## Game Features
+- **4:3 Playable Area:** All gameplay is confined to a central 4:3 region, with controls in dedicated sidebars.
+- **Visual Boundaries:** Faint lines show the playfield edges for clarity.
 - **Dynamic Fire Rate**: Your shooting speed increases with your score
 - **Adaptive Spawning**: Enemy spawn rate increases as you perform better
 - **Life System**: Collect gummy life power-ups every 25 points
