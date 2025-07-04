@@ -20,6 +20,8 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 ## Sound Effects
 - **p5.sound** is used for audio support.
 - **shooting.mp3** is played every time the gummy bear shoots a rainbow ball of acid.
+- **soundtrack.mp3** plays in a loop when the round begins, and stops on game over or win.
+- **gummybear.mp3** plays when a LifeGummy (extra life) enters the playfield.
 - **Recommended format:** MP3 (for best browser compatibility and performance).
 
 ## Controls

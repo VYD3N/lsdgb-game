@@ -6,6 +6,7 @@
 !sketch.js
 !README.md
 !.gitignore
+!*.mp3
 
 # Exclude common development files
 *.log

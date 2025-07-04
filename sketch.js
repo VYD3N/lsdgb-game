@@ -8,6 +8,8 @@ let gameState = 'start'; // 'start', 'playing', 'gameOver', 'win'
 let enemySpawnCounter = 0;
 let nextLifeSpawnThreshold = 25;
 let shootingSound;
+let soundtrack;
+let gummyBearSound;
 
 // --- VIRTUAL CANVAS & PLAYABLE AREA SETUP ---
 const VIRTUAL_WIDTH = 1280;
@@ -18,6 +20,12 @@ let scaleFactor, offsetX, offsetY;
 let isMobile = false;
 let touchControls = {};
 
+function preload() {
+  shootingSound = loadSound('shooting.mp3');
+  soundtrack = loadSound('soundtrack.mp3');
+  gummyBearSound = loadSound('gummybear.mp3');
+}
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   isMobile = ('ontouchstart' in window);
@@ -26,7 +34,6 @@ function setup() {
   rectMode(CENTER);
   textFont('monospace');
   player = new GummyBear();
-  shootingSound = loadSound('shooting.mp3');
 }
 
 function draw() {
@@ -94,7 +101,11 @@ function runGame() {
   stroke(255, 255, 255, 20); strokeWeight(4); line(PLAYABLE_OFFSET_X, 0, PLAYABLE_OFFSET_X, VIRTUAL_HEIGHT); line(PLAYABLE_OFFSET_X + PLAYABLE_WIDTH, 0, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH, VIRTUAL_HEIGHT);
   let spawnDelay = floor(map(player.shootCooldown, player.fastestShootCooldown, player.baseShootCooldown, 20, 90));
   if (frameCount % spawnDelay === 0) { enemySpawnCounter++; enemies.push(enemySpawnCounter > 0 && enemySpawnCounter % 25 === 0 ? new Cop() : new Suit()); }
-  if (score >= nextLifeSpawnThreshold) { lifeGummies.push(new LifeGummy()); nextLifeSpawnThreshold += 25; }
+  if (score >= nextLifeSpawnThreshold) {
+    lifeGummies.push(new LifeGummy());
+    nextLifeSpawnThreshold += 25;
+    if (gummyBearSound && gummyBearSound.isLoaded()) gummyBearSound.play();
+  }
   player.move(); player.display();
   if (keyIsDown(32) || touchControls.fireButton.active) { player.splash(); }
   for (let i = vials.length - 1; i >= 0; i--) { vials[i].update(); vials[i].display(); if (vials[i].isOffscreen()) vials.splice(i, 1); }
@@ -128,10 +139,39 @@ function advanceGameState() {
   let vX, vY;
   if(touches.length > 0) { vX = (touches[0].x - offsetX) / scaleFactor; vY = (touches[0].y - offsetY) / scaleFactor; }
   else { vX = getVirtualMouseX(); vY = getVirtualMouseY(); }
-  if (gameState === 'start') { let btnX = VIRTUAL_WIDTH / 2, btnY = VIRTUAL_HEIGHT / 2 + 100, btnW = 400, btnH = 90; if (vX > btnX - btnW / 2 && vX < btnX + btnW / 2 && vY > btnY - btnH / 2 && vY < btnY + btnH / 2) { resetGame(); gameState = 'playing'; } }
-  else if (gameState === 'gameOver' || gameState === 'win') { resetGame(); gameState = 'start'; }
+  if (gameState === 'start') {
+    let btnX = VIRTUAL_WIDTH / 2, btnY = VIRTUAL_HEIGHT / 2 + 100, btnW = 400, btnH = 90;
+    if (vX > btnX - btnW / 2 && vX < btnX + btnW / 2 && vY > btnY - btnH / 2 && vY < btnY + btnH / 2) {
+      resetGame();
+      gameState = 'playing';
+      if (soundtrack && soundtrack.isLoaded()) {
+        soundtrack.setLoop(true);
+        soundtrack.play();
+      }
+    }
+  }
+  else if (gameState === 'gameOver' || gameState === 'win') {
+    if (soundtrack && soundtrack.isPlaying()) soundtrack.stop();
+    resetGame();
+    gameState = 'start';
+  }
 }
-function keyPressed() { if (keyCode === ENTER) { if (gameState === 'start') { resetGame(); gameState = 'playing'; } else if (gameState === 'gameOver' || gameState === 'win') { resetGame(); gameState = 'start'; } } }
+function keyPressed() {
+  if (keyCode === ENTER) {
+    if (gameState === 'start') {
+      resetGame();
+      gameState = 'playing';
+      if (soundtrack && soundtrack.isLoaded()) {
+        soundtrack.setLoop(true);
+        soundtrack.play();
+      }
+    } else if (gameState === 'gameOver' || gameState === 'win') {
+      if (soundtrack && soundtrack.isPlaying()) soundtrack.stop();
+      resetGame();
+      gameState = 'start';
+    }
+  }
+}
 function mousePressed() { advanceGameState(); }
 function touchStarted() { advanceGameState(); return false; }
 function resetGame() { score = 0; vials = []; enemies = []; lifeGummies = []; player = new GummyBear(); enemySpawnCounter = 0; nextLifeSpawnThreshold = 25; frameCount = 0; }
