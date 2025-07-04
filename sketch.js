@@ -9,14 +9,26 @@ let gameState = 'start'; // 'start', 'playing', 'gameOver', 'win'
 let enemySpawnCounter = 0;
 let nextLifeSpawnThreshold = 25;
 
+// --- VIRTUAL CANVAS SETUP ---
+// Force redeploy to ensure touch support is included
+const VIRTUAL_WIDTH = 1280;
+const VIRTUAL_HEIGHT = 720;
+let scaleFactor, offsetX, offsetY;
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  calculateScaling();
   rectMode(CENTER);
   textFont('monospace');
   player = new GummyBear();
 }
 
 function draw() {
+  background(10, 5, 15);
+  push();
+  translate(offsetX, offsetY);
+  scale(scaleFactor);
+  
   if (gameState === 'start') {
     drawStartScreen();
   } else if (gameState === 'playing') {
@@ -26,40 +38,50 @@ function draw() {
   } else if (gameState === 'win') {
     drawWinScreen();
   }
+  
+  pop();
 }
 
-// --- Game State Functions ---
+// --- Scaling and Input Functions ---
+function calculateScaling() {
+  scaleFactor = min(windowWidth / VIRTUAL_WIDTH, windowHeight / VIRTUAL_HEIGHT);
+  offsetX = (windowWidth - VIRTUAL_WIDTH * scaleFactor) / 2;
+  offsetY = (windowHeight - VIRTUAL_HEIGHT * scaleFactor) / 2;
+}
+function getVirtualMouseX() { return (mouseX - offsetX) / scaleFactor; }
+function getVirtualMouseY() { return (mouseY - offsetY) / scaleFactor; }
+function getVirtualTouchX() { return (touches[0].x - offsetX) / scaleFactor; }
+function getVirtualTouchY() { return (touches[0].y - offsetY) / scaleFactor; }
+function windowResized() { resizeCanvas(windowWidth, windowHeight); calculateScaling(); }
 
+// --- Game State Functions ---
 function drawStartScreen() {
   background(20, 10, 30);
   textAlign(CENTER, CENTER);
-  fill(50, 255, 150);
-  textSize(120);
-  text("LSDGB", width / 2, height / 2 - 200);
+  fill(50, 255, 150); textSize(120);
+  text("LSDGB", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 200);
 
-  fill(255);
-  textSize(22);
-  text("Use ARROW KEYS or WASD to move.", width / 2, height / 2 - 90);
-  text("HOLD SPACEBAR to auto-shoot vibes.", width / 2, height / 2 - 60);
-  text("Collect 3 lives to win! Extra lives spawn every 25 points.", width / 2, height / 2 - 30);
+  fill(255); textSize(28);
+  text("Desktop: Use ARROW/WASD to move, HOLD SPACE to shoot.", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 90);
+  text("Mobile: DRAG your finger to move and shoot.", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 50);
+  text("Collect 3 lives to win!", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 10);
 
-  let btnX = width / 2, btnY = height / 2 + 100, btnW = 350, btnH = 80;
+  let btnX = VIRTUAL_WIDTH / 2, btnY = VIRTUAL_HEIGHT / 2 + 100, btnW = 400, btnH = 90;
   let pulse = sin(frameCount * 0.05) * 5;
   stroke(255, 0, 255); strokeWeight(4); fill(20, 10, 30, 200);
   rect(btnX, btnY, btnW + pulse, btnH + pulse/2, 10);
-  noStroke(); fill(255, 0, 255); textSize(32);
+  noStroke(); fill(255, 0, 255); textSize(36);
   text("START REVOLUTION", btnX, btnY);
-  
-  fill(255); textSize(18);
-  text("(Click button or press ENTER)", btnX, btnY + 60);
+  fill(255); textSize(20);
+  text("(Tap button or press ENTER)", btnX, btnY + 70);
 }
 
 function runGame() {
   background(40, 35, 50);
 
-  // *** NEW SPAWN LOGIC HERE ***
-  // Spawn rate is now tied to the player's fire rate for dynamic difficulty.
-  let spawnDelay = floor(map(player.shootCooldown, player.minShootCooldown, player.maxShootCooldown, 15, 75));
+  player.update();
+
+  let spawnDelay = floor(map(player.shootCooldown, player.fastestShootCooldown, player.baseShootCooldown, 20, 90));
   if (frameCount % spawnDelay === 0) {
     enemySpawnCounter++;
     enemies.push(enemySpawnCounter > 0 && enemySpawnCounter % 25 === 0 ? new Cop() : new Suit());
@@ -72,7 +94,10 @@ function runGame() {
 
   player.move();
   player.display();
-  if (keyIsDown(32)) player.splash();
+  // Shoot on spacebar OR touch
+  if (keyIsDown(32) || touches.length > 0) {
+    player.splash();
+  }
 
   for (let i = vials.length - 1; i >= 0; i--) {
     vials[i].update(); vials[i].display();
@@ -81,14 +106,9 @@ function runGame() {
   for (let i = enemies.length - 1; i >= 0; i--) {
     enemies[i].update(player); 
     enemies[i].display();
-    
-    if (enemies[i].shouldBeRemoved()) {
-        enemies.splice(i, 1);
-        continue;
-    }
-
+    if (enemies[i].shouldBeRemoved()) { enemies.splice(i, 1); continue; }
     if (enemies[i].isOffscreen()) {
-      if (enemies[i].state !== 'hippie') { score--; player.decreaseFireRate(); }
+      if (enemies[i].state !== 'hippie') score--;
       enemies.splice(i, 1);
     }
   }
@@ -99,7 +119,7 @@ function runGame() {
   
   handleCollisions();
   
-  if (score < 0) gameState = 'gameOver';
+  if (score < -5) gameState = 'gameOver';
   drawHUD();
 }
 
@@ -108,13 +128,12 @@ function handleCollisions() {
     for (let j = enemies.length - 1; j >= 0; j--) {
       if (vials[i] && enemies[j] && enemies[j].state !== 'hippie' && enemies[j].isHitBy(vials[i])) {
         enemies[j].takeHit();
-        if(enemies[j].state === 'hippie') { score++; player.increaseFireRate(); }
+        if(enemies[j].state === 'hippie') score++;
         vials.splice(i, 1);
         break; 
       }
     }
   }
-
   for (let i = vials.length - 1; i >= 0; i--) {
     for (let j = lifeGummies.length - 1; j >= 0; j--) {
         if (vials[i] && lifeGummies[j] && lifeGummies[j].isHitBy(vials[i])) {
@@ -124,19 +143,14 @@ function handleCollisions() {
         }
     }
   }
-
   for (let i = enemies.length - 1; i >= 0; i--) {
     let enemy = enemies[i];
     if (enemy.state !== 'hippie' && player.isCollidingWith(enemy)) {
       player.takeDamage();
       enemies.splice(i, 1);
-      if (player.lives <= 0) {
-        gameState = 'gameOver';
-        return;
-      }
+      if (player.lives <= 0) { gameState = 'gameOver'; return; }
     }
   }
-
   for (let i = enemies.length - 1; i >= 0; i--) {
     let enemy = enemies[i];
     if (enemy && enemy.state === 'cop') {
@@ -150,65 +164,68 @@ function handleCollisions() {
         }
     }
   }
-
   for (let i = lifeGummies.length - 1; i >= 0; i--) {
     if (player.isCollidingWith(lifeGummies[i])) {
       player.gainLife();
       lifeGummies.splice(i, 1);
-      if (player.lives >= player.maxLives) {
-        gameState = 'win';
-      }
+      if (player.lives >= player.maxLives) { gameState = 'win'; }
     }
   }
 }
 
 function drawWinScreen() {
-    background(20, 100, 80);
-    textAlign(CENTER, CENTER);
-    fill(255, 255, 0); textSize(64);
-    text("REVOLUTION SUCCEEDS!", width / 2, height / 2 - 80);
-    fill(255); textSize(32);
-    text(`Final Score: ${score}`, width / 2, height / 2);
-    textSize(24);
-    text("Click or press ENTER to play again", width / 2, height / 2 + 60);
+    background(20, 100, 80); textAlign(CENTER, CENTER);
+    fill(255, 255, 0); textSize(72);
+    text("REVOLUTION SUCCEEDS!", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 80);
+    fill(255); textSize(40);
+    text(`Final Score: ${score}`, VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 + 20);
+    textSize(30);
+    text("Tap or press ENTER to play again", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 + 100);
 }
-
 function drawGameOverScreen() {
-  background(20, 10, 30);
-  textAlign(CENTER, CENTER);
-  fill(255, 0, 0); textSize(64);
-  text("THE MAN WINS", width / 2, height / 2 - 80);
-  fill(255); textSize(32);
-  text(`Final Score: ${score}`, width / 2, height / 2);
-  textSize(24);
-  text("Click or press ENTER to try again", width / 2, height / 2 + 60);
+  background(20, 10, 30); textAlign(CENTER, CENTER);
+  fill(255, 0, 0); textSize(72);
+  text("THE MAN WINS", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 80);
+  fill(255); textSize(40);
+  text(`Final Score: ${score}`, VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 + 20);
+  textSize(30);
+  text("Tap or press ENTER to try again", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 + 100);
+}
+function drawHUD() {
+  fill(255, 0, 255); textSize(40); textAlign(LEFT, TOP);
+  text(`SCORE: ${score}`, 20, 20);
+  text(`LIVES: ${player.lives}`, 20, 70);
 }
 
-
-function drawHUD() {
-  fill(255, 0, 255); textSize(32); textAlign(LEFT, TOP);
-  text(`SCORE: ${score}`, 20, 20);
-  text(`LIVES: ${player.lives}`, 20, 60);
+function advanceGameState() {
+  if (gameState === 'start') {
+    let vMouseX = getVirtualMouseX(); let vMouseY = getVirtualMouseY();
+    let btnX = VIRTUAL_WIDTH / 2, btnY = VIRTUAL_HEIGHT / 2 + 100, btnW = 400, btnH = 90;
+    if (vMouseX > btnX - btnW / 2 && vMouseX < btnX + btnW / 2 && vMouseY > btnY - btnH / 2 && vMouseY < btnY + btnH / 2) {
+      resetGame(); gameState = 'playing';
+    }
+  } else if (gameState === 'gameOver' || gameState === 'win') {
+      resetGame(); gameState = 'start';
+  }
 }
 
 function keyPressed() {
   if (keyCode === ENTER) {
-    if (gameState === 'start' || gameState === 'gameOver' || gameState === 'win') {
-      let wasStart = gameState === 'start';
-      resetGame();
-      gameState = wasStart ? 'playing' : 'start';
+    // On start screen, enter works like clicking the button
+    if (gameState === 'start') {
+      resetGame(); gameState = 'playing';
+    } else if (gameState === 'gameOver' || gameState === 'win') {
+      resetGame(); gameState = 'start';
     }
   }
 }
-
-function mousePressed() {
-  if (gameState === 'start' || gameState === 'gameOver' || gameState === 'win') {
-    let wasStart = gameState === 'start';
-    resetGame();
-    gameState = wasStart ? 'playing' : 'start';
-  }
+function mousePressed() { advanceGameState(); }
+function touchStarted() {
+  // Pass the touch event to the same logic as mouse click for menus
+  advanceGameState();
+  // prevent default browser behavior
+  return false;
 }
-
 function resetGame() {
   score = 0; vials = []; enemies = []; lifeGummies = [];
   player = new GummyBear();
@@ -217,72 +234,74 @@ function resetGame() {
   frameCount = 0;
 }
 
-function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
-    if(player) {
-      player.x = constrain(player.x, player.w / 2, width - player.w / 2);
-      player.y = constrain(player.y, player.h / 2, height - player.h / 2);
-    }
-}
-
 // --- CLASSES ---
-
 class GummyBear {
   constructor() {
-    this.x = width / 2; this.y = height - 80;
-    this.w = 50; this.h = 60;
-    this.speed = 6; this.hue = random(360);
+    this.x = VIRTUAL_WIDTH / 2; this.y = VIRTUAL_HEIGHT - 80;
+    this.w = 50; this.h = 60; this.speed = 8; this.hue = random(360);
     this.lives = 1; this.maxLives = 3;
-    this.shootCooldown = 30; this.minShootCooldown = 5; this.maxShootCooldown = 60;
+    this.baseShootCooldown = 35; this.fastestShootCooldown = 5;
+    this.scoreForMaxSpeed = 50;
+    this.shootCooldown = this.baseShootCooldown;
     this.lastShotFrame = 0;
   }
+  update() {
+    let effectiveScore = max(0, score); 
+    this.shootCooldown = map(effectiveScore, 0, this.scoreForMaxSpeed, this.baseShootCooldown, this.fastestShootCooldown);
+    this.shootCooldown = constrain(this.shootCooldown, this.fastestShootCooldown, this.baseShootCooldown);
+  }
   move() {
+    // Keyboard movement
     if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) this.x -= this.speed;
     if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) this.x += this.speed;
     if (keyIsDown(UP_ARROW) || keyIsDown(87)) this.y -= this.speed;
     if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) this.y += this.speed;
-    this.x = constrain(this.x, this.w / 2, width - this.w / 2);
-    this.y = constrain(this.y, this.h / 2, height - this.h / 2);
+    
+    // Touch movement
+    if (touches.length > 0) {
+      let touchX = getVirtualTouchX();
+      let touchY = getVirtualTouchY();
+      let move_vec = createVector(touchX - this.x, touchY - this.y);
+      if (move_vec.mag() > 1) { // Prevents jittering when finger is on the bear
+          move_vec.setMag(this.speed);
+          this.x += move_vec.x;
+          this.y += move_vec.y;
+      }
+    }
+    
+    this.x = constrain(this.x, this.w / 2, VIRTUAL_WIDTH - this.w / 2);
+    this.y = constrain(this.y, this.h / 2, VIRTUAL_HEIGHT - this.h / 2);
     this.hue = (this.hue + 1) % 360;
   }
   display() {
-    push(); colorMode(HSB, 360, 100, 100, 1); noStroke();
-    fill(this.hue, 80, 100, 0.8);
+    push(); colorMode(HSB, 360, 100, 100, 1); noStroke(); fill(this.hue, 80, 100, 0.8);
     ellipse(this.x, this.y, this.w, this.h);
     ellipse(this.x - this.w * 0.3, this.y - this.h * 0.4, this.w * 0.4);
     ellipse(this.x + this.w * 0.3, this.y - this.h * 0.4, this.w * 0.4);
     pop();
   }
-  splash() {
-    if (frameCount - this.lastShotFrame > this.shootCooldown) {
-      vials.push(new AcidVile(this.x, this.y - this.h / 4));
-      this.lastShotFrame = frameCount;
-    }
-  }
-  increaseFireRate() { this.shootCooldown = constrain(this.shootCooldown - 2, this.minShootCooldown, this.maxShootCooldown); }
-  decreaseFireRate() { this.shootCooldown = constrain(this.shootCooldown + 3, this.minShootCooldown, this.maxShootCooldown); }
+  splash() { if (frameCount - this.lastShotFrame > this.shootCooldown) { vials.push(new AcidVile(this.x, this.y - this.h / 4)); this.lastShotFrame = frameCount; } }
   takeDamage() { this.lives--; }
   gainLife() { if (this.lives < this.maxLives) this.lives++; }
   isCollidingWith(other) { return dist(this.x, this.y, other.x, other.y) < this.w / 2 + other.w / 2; }
 }
 
 class LifeGummy {
-    constructor() { this.x = random(20, width - 20); this.y = -50; this.w = 40; this.h = 50; this.speed = 2.5; this.hue = random(360); }
+    constructor() { this.x = random(20, VIRTUAL_WIDTH - 20); this.y = -50; this.w = 40; this.h = 50; this.speed = 2.5; this.hue = random(360); }
     update() { this.y += this.speed; this.hue = (this.hue + 2) % 360; }
     display() {
-        push(); colorMode(HSB, 360, 100, 100, 1); noStroke();
-        fill(this.hue, 90, 100, 0.9);
+        push(); colorMode(HSB, 360, 100, 100, 1); noStroke(); fill(this.hue, 90, 100, 0.9);
         ellipse(this.x, this.y, this.w, this.h);
         ellipse(this.x - this.w * 0.3, this.y - this.h * 0.4, this.w * 0.4);
         ellipse(this.x + this.w * 0.3, this.y - this.h * 0.4, this.w * 0.4);
         pop();
     }
     isHitBy(vile) { return dist(this.x, this.y, vile.x, vile.y) < this.w / 2 + vile.r; }
-    isOffscreen() { return this.y > height + this.h; }
+    isOffscreen() { return this.y > VIRTUAL_HEIGHT + this.h; }
 }
 
 class AcidVile {
-  constructor(x, y) { this.x = x; this.y = y; this.r = 12; this.speed = 8; this.hue = random(360); }
+  constructor(x, y) { this.x = x; this.y = y; this.r = 12; this.speed = 10; this.hue = random(360); }
   update() { this.y -= this.speed; this.hue = (this.hue + 5) % 360; }
   display() {
     push(); colorMode(HSB, 360, 100, 100, 100); noStroke();
@@ -297,8 +316,8 @@ class AcidVile {
 
 class Enemy {
    constructor() {
-    this.x = random(20, width - 20); this.y = -50; this.w = 40; this.h = 70;
-    this.speed = random(1, 3); this.hue = random(360); this.transformTime = 0; this.slogan = "";
+    this.x = random(20, VIRTUAL_WIDTH - 20); this.y = -50; this.w = 40; this.h = 70;
+    this.speed = random(1.5, 4); this.hue = random(360); this.transformTime = 0; this.slogan = "";
     this.hippieSolidDuration = 7500; this.hippieFadeDuration = 2500;
   }
   update(target) {
@@ -308,21 +327,13 @@ class Enemy {
   }
   isHitBy(vile) { return dist(this.x, this.y, vile.x, vile.y) < this.w / 2 + vile.r; }
   isCollidingWith(other) { return dist(this.x, this.y, other.x, other.y) < this.w / 2 + other.w / 2; }
-  transform() {
-    this.state = 'hippie'; this.transformTime = millis();
-    this.slogan = SLOGANS[floor(this.hue / (360 / SLOGANS.length))];
-  }
-  shouldBeRemoved() {
-    if (this.state !== 'hippie') return false;
-    return millis() - this.transformTime > this.hippieSolidDuration + this.hippieFadeDuration;
-  }
-  isOffscreen() { return this.y > height + this.h || this.y < -this.h || this.x < -this.w || this.x > width + this.w; }
+  transform() { this.state = 'hippie'; this.transformTime = millis(); this.slogan = SLOGANS[floor(this.hue / (360 / SLOGANS.length))]; }
+  shouldBeRemoved() { if (this.state !== 'hippie') return false; return millis() - this.transformTime > this.hippieSolidDuration + this.hippieFadeDuration; }
+  isOffscreen() { return this.y > VIRTUAL_HEIGHT + this.h || this.y < -this.h || this.x < -this.w || this.x > VIRTUAL_WIDTH + this.w; }
   displayAsHippie() {
     let timeSinceTransform = millis() - this.transformTime;
     let alpha = 255;
-    if (timeSinceTransform > this.hippieSolidDuration) {
-        alpha = map(timeSinceTransform, this.hippieSolidDuration, this.hippieSolidDuration + this.hippieFadeDuration, 255, 0);
-    }
+    if (timeSinceTransform > this.hippieSolidDuration) { alpha = map(timeSinceTransform, this.hippieSolidDuration, this.hippieSolidDuration + this.hippieFadeDuration, 255, 0); }
     push(); colorMode(HSB, 360, 100, 100, 100); fill(this.hue, 90, 90, map(alpha, 0, 255, 0, 100)); rect(this.x, this.y, this.w, this.h, 5); pop();
     stroke(255, alpha); strokeWeight(2); noFill(); ellipse(this.x, this.y - 10, 15);
     line(this.x, this.y - 17.5, this.x, this.y - 2.5); line(this.x, this.y - 10, this.x - 6, this.y - 4); line(this.x, this.y - 10, this.x + 6, this.y - 4);
@@ -330,8 +341,8 @@ class Enemy {
     stroke(139, 69, 19, alpha); strokeWeight(3);
     line(this.x - 15, this.y - this.h / 2 - 15, this.x - 20, this.y - this.h / 2 + 5); line(this.x + 15, this.y - this.h / 2 - 15, this.x + 20, this.y - this.h / 2 + 5);
     if (timeSinceTransform < 2500) {
-      push(); let bubbleY = this.y - 70; textSize(14); textAlign(CENTER, CENTER); let sloganWidth = textWidth(this.slogan) + 20;
-      noStroke(); fill(255, 255, 255, 200); rect(this.x, bubbleY, sloganWidth, 30, 15);
+      push(); let bubbleY = this.y - 70; textSize(16); textAlign(CENTER, CENTER); let sloganWidth = textWidth(this.slogan) + 25;
+      noStroke(); fill(255, 255, 255, 200); rect(this.x, bubbleY, sloganWidth, 35, 15);
       fill(0); text(this.slogan, this.x, bubbleY); pop();
     }
   }
@@ -341,8 +352,8 @@ class Suit extends Enemy {
   constructor() { super(); this.state = 'suit'; }
   display() { (this.state === 'suit' || this.state === 'angry_suit') ? this.displayAsSuit() : this.displayAsHippie(); }
   revertToAngrySuit(target) {
-    this.state = 'angry_suit'; this.speed = 4;
-    let dx = target.x - this.x; let dy = height;
+    this.state = 'angry_suit'; this.speed = 5;
+    let dx = target.x - this.x; let dy = VIRTUAL_HEIGHT;
     let direction = createVector(dx, dy);
     direction.normalize(); this.chaseVector = direction;
   }
@@ -357,7 +368,7 @@ class Suit extends Enemy {
 }
 
 class Cop extends Enemy {
-  constructor() { super(); this.state = 'cop'; this.speed = random(1.5, 3.5); this.hits = 3; this.lastHitTime = 0; }
+  constructor() { super(); this.state = 'cop'; this.speed = random(2, 4.5); this.hits = 3; this.lastHitTime = 0; }
   display() { this.state === 'cop' ? this.displayAsCop() : this.displayAsHippie(); }
   takeHit() { this.hits--; this.lastHitTime = millis(); if (this.hits <= 0) this.transform(); }
   displayAsCop() {
