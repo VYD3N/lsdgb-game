@@ -1,0 +1,36 @@
+# Exclude everything by default
+*
+
+# Only include these specific files
+!index.html
+!sketch.js
+!.gitignore
+
+# Exclude common development files
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Exclude IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Exclude node modules if any
+node_modules/
+
+# Exclude build artifacts
+dist/
+build/
+*.min.js
+*.min.css
+
+# Exclude any other common files
+*.zip
+*.rar
+*.7z
+*.tar.gz 
