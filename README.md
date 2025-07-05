@@ -62,6 +62,7 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 - Game over at -3 score.
 - HUD is red for extra tension.
 - **Parking lot background** (`parkinglot.png`) for a more intense vibe.
+- **Unique soundtrack** (`soundtrack2.mp3`) for Hard Mode.
 
 ## Game Features
 - **4:3 Playable Area:** All gameplay is confined to a central 4:3 region, with controls in dedicated sidebars.
@@ -83,7 +84,7 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 ## Assets
 - **All image and sound assets must be present in the project directory for full functionality:**
   - `gummy.png`, `suit1.png`, `suit2.png`, `cop1.png`, `cop2.png`, `hippie1.png`, `hippie2.png`, `angrysuit1.png`, `angrysuit2.png`, `lifegummy1.png`, `lifegummy2.png`, `grass.png`, `parkinglot.png`
-  - `shooting.mp3`, `soundtrack.mp3`, `gummybear.mp3`
+  - `shooting.mp3`, `soundtrack.mp3`, `soundtrack2.mp3`, `gummybear.mp3`
 
 ## Local Setup
 1. Clone this repository:

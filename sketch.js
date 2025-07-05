@@ -9,6 +9,7 @@ let enemySpawnCounter = 0;
 let nextLifeSpawnThreshold = 25;
 let shootingSound;
 let soundtrack;
+let soundtrack2;
 let gummyBearSound;
 let playerImg;
 let suitFrames = [];
@@ -33,6 +34,7 @@ let touchControls = {};
 function preload() {
   shootingSound = loadSound('shooting.mp3');
   soundtrack = loadSound('soundtrack.mp3');
+  soundtrack2 = loadSound('soundtrack2.mp3');
   gummyBearSound = loadSound('gummybear.mp3');
   playerImg = loadImage('gummy.png');
   suitFrames[0] = loadImage('suit1.png');
@@ -195,14 +197,15 @@ function advanceGameState() {
       selectedMode = 1;
       resetGame();
       gameState = 'playing';
-      if (soundtrack && soundtrack.isLoaded()) {
-        soundtrack.setLoop(true);
-        soundtrack.play();
+      if (soundtrack2 && soundtrack2.isLoaded()) {
+        soundtrack2.setLoop(true);
+        soundtrack2.play();
       }
     }
   }
   else if (gameState === 'gameOver' || gameState === 'win') {
     if (soundtrack && soundtrack.isPlaying()) soundtrack.stop();
+    if (soundtrack2 && soundtrack2.isPlaying()) soundtrack2.stop();
     resetGame();
     gameState = 'start';
   }
@@ -216,13 +219,21 @@ function keyPressed() {
       difficulty = selectedMode === 0 ? 'normal' : 'hard';
       resetGame();
       gameState = 'playing';
-      if (soundtrack && soundtrack.isLoaded()) {
-        soundtrack.setLoop(true);
-        soundtrack.play();
+      if (difficulty === 'hard') {
+        if (soundtrack2 && soundtrack2.isLoaded()) {
+          soundtrack2.setLoop(true);
+          soundtrack2.play();
+        }
+      } else {
+        if (soundtrack && soundtrack.isLoaded()) {
+          soundtrack.setLoop(true);
+          soundtrack.play();
+        }
       }
     }
   } else if (keyCode === ENTER && (gameState === 'gameOver' || gameState === 'win')) {
     if (soundtrack && soundtrack.isPlaying()) soundtrack.stop();
+    if (soundtrack2 && soundtrack2.isPlaying()) soundtrack2.stop();
     resetGame();
     gameState = 'start';
   }
