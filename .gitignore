@@ -35,4 +35,24 @@ build/
 *.zip
 *.rar
 *.7z
-*.tar.gz 
+*.tar.gz
+
+# Allow image assets in the project root
+!lifegummy1.png
+!lifegummy2.png
+!grass.png
+
+# Allow all required sprite images and audio in the project root
+!angrysuit1.png
+!angrysuit2.png
+!cop1.png
+!cop2.png
+!hippie1.png
+!hippie2.png
+!suit1.png
+!suit2.png
+!gummy.png
+!angrysuit.mp3
+
+# Allow favicon.ico in the project root
+!favicon.ico 
