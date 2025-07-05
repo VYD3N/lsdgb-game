@@ -159,7 +159,7 @@ function handleCollisions() {
     }
   }
   for (let i = enemies.length - 1; i >= 0; i--) { let enemy = enemies[i]; if (enemy.state !== 'hippie' && player.isCollidingWith(enemy)) { player.takeDamage(); enemies.splice(i, 1); if (player.lives <= 0) { gameState = 'gameOver'; return; } } }
-  for (let i = enemies.length - 1; i >= 0; i--) { let enemy = enemies[i]; if (enemy && enemy.state === 'cop') { for (let j = enemies.length - 1; j >= 0; j--) { if (i === j) continue; let other = enemies[j]; if (other && other.state === 'hippie' && enemy.isCollidingWith(other)) { other.revertToAngrySuit(player); break; } } } }
+  for (let i = enemies.length - 1; i >= 0; i--) { let enemy = enemies[i]; if (enemy && enemy.state === 'cop') { for (let j = enemies.length - 1; j >= 0; j--) { if (i === j) continue; let other = enemies[j]; /* Only revert hippies that are Suits, not Cops or others. This could be adapted for an ultra boss scenario in the future. */ if (other && other.state === 'hippie' && enemy.isCollidingWith(other) && other instanceof Suit) { other.revertToAngrySuit(player); break; } } } }
   for (let i = lifeGummies.length - 1; i >= 0; i--) { if (player.isCollidingWith(lifeGummies[i])) { player.gainLife(); lifeGummies.splice(i, 1); if (player.lives >= player.maxLives) { gameState = 'win'; } } }
 }
 

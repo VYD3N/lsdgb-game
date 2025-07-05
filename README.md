@@ -55,7 +55,7 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 - **Life System**: Collect gummy life power-ups every 25 points
 - **Enemy Types**: 
   - **Suits**: Convert to hippies with 1 hit
-  - **Cops**: Require 3 hits to convert, and can revert hippies back to angry suits!
+  - **Cops**: Require 3 hits to convert, and can revert hippies back to angry suits! (Note: Only hippies that originated as Suits can be reverted. This logic could be adapted for an 'ultra boss' scenario in future versions.)
 - **Responsive Canvas**: Game scales perfectly on any screen size
 - **Touch Support**: Full mobile and tablet support with a professional, large, corner-anchored circular D-pad (no dead zone, visual feedback) and a dedicated fire button
 - **Landscape Mode**: Enforced for best mobile experience
