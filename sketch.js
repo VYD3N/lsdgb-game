@@ -17,6 +17,9 @@ let copFrames = [];
 let angrySuitFrames = [];
 let bgImg;
 let lifeGummyFrames = [];
+let difficulty = 'normal'; // 'normal' or 'hard'
+let selectedMode = 0; // 0 = normal, 1 = hard
+let parkinglotImg;
 
 // --- VIRTUAL CANVAS & PLAYABLE AREA SETUP ---
 const VIRTUAL_WIDTH = 1280;
@@ -43,6 +46,7 @@ function preload() {
   bgImg = loadImage('grass.png');
   lifeGummyFrames[0] = loadImage('lifegummy1.png');
   lifeGummyFrames[1] = loadImage('lifegummy2.png');
+  parkinglotImg = loadImage('parkinglot.png');
 }
 
 function setup() {
@@ -57,9 +61,10 @@ function setup() {
 
 function draw() {
   // Draw background to fill the entire browser canvas (before scaling/translation)
-  if (bgImg) {
-    for (let y = 0; y < height; y += bgImg.height) {
-      image(bgImg, 0, y, width, bgImg.height);
+  let bgToUse = (difficulty === 'hard' && parkinglotImg) ? parkinglotImg : bgImg;
+  if (bgToUse) {
+    for (let y = 0; y < height; y += bgToUse.height) {
+      image(bgToUse, 0, y, width, bgToUse.height);
     }
   } else {
     background(10, 5, 15);
@@ -124,10 +129,14 @@ function drawTouchControls() {
 }
 
 function runGame() {
-  // background(40, 35, 50); // Removed to allow bgImg to show
   handleTouchInput(); player.update();
   stroke(255, 255, 255, 20); strokeWeight(4); line(PLAYABLE_OFFSET_X, 0, PLAYABLE_OFFSET_X, VIRTUAL_HEIGHT); line(PLAYABLE_OFFSET_X + PLAYABLE_WIDTH, 0, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH, VIRTUAL_HEIGHT);
-  let spawnDelay = floor(map(player.shootCooldown, player.fastestShootCooldown, player.baseShootCooldown, 20, 90));
+  let spawnDelay;
+  if (difficulty === 'hard') {
+    spawnDelay = floor(map(player.shootCooldown, player.fastestShootCooldown, player.baseShootCooldown, 10, 40));
+  } else {
+    spawnDelay = floor(map(player.shootCooldown, player.fastestShootCooldown, player.baseShootCooldown, 20, 90));
+  }
   if (frameCount % spawnDelay === 0) { enemySpawnCounter++; enemies.push(enemySpawnCounter > 0 && enemySpawnCounter % 25 === 0 ? new Cop() : new Suit()); }
   if (score >= nextLifeSpawnThreshold) {
     lifeGummies.push(new LifeGummy());
@@ -140,7 +149,7 @@ function runGame() {
   for (let i = enemies.length - 1; i >= 0; i--) { enemies[i].update(player); enemies[i].display(); if (enemies[i].shouldBeRemoved()) { enemies.splice(i, 1); continue; } if (enemies[i].isOffscreen()) { if (enemies[i].state !== 'hippie') score--; enemies.splice(i, 1); } }
   for (let i = lifeGummies.length - 1; i >= 0; i--) { lifeGummies[i].update(); lifeGummies[i].display(); if (lifeGummies[i].toBeRemoved) { lifeGummies.splice(i,1); continue; } if (lifeGummies[i].isOffscreen()) lifeGummies.splice(i, 1); }
   handleCollisions();
-  if (score < -5) gameState = 'gameOver';
+  if (score < (difficulty === 'hard' ? -3 : -5)) gameState = 'gameOver';
   drawHUD();
   drawTouchControls();
 }
@@ -160,16 +169,30 @@ function handleCollisions() {
   }
   for (let i = enemies.length - 1; i >= 0; i--) { let enemy = enemies[i]; if (enemy.state !== 'hippie' && player.isCollidingWith(enemy)) { player.takeDamage(); enemies.splice(i, 1); if (player.lives <= 0) { gameState = 'gameOver'; return; } } }
   for (let i = enemies.length - 1; i >= 0; i--) { let enemy = enemies[i]; if (enemy && enemy.state === 'cop') { for (let j = enemies.length - 1; j >= 0; j--) { if (i === j) continue; let other = enemies[j]; /* Only revert hippies that are Suits, not Cops or others. This could be adapted for an ultra boss scenario in the future. */ if (other && other.state === 'hippie' && enemy.isCollidingWith(other) && other instanceof Suit) { other.revertToAngrySuit(player); break; } } } }
-  for (let i = lifeGummies.length - 1; i >= 0; i--) { if (player.isCollidingWith(lifeGummies[i])) { player.gainLife(); lifeGummies.splice(i, 1); if (player.lives >= player.maxLives) { gameState = 'win'; } } }
+  for (let i = lifeGummies.length - 1; i >= 0; i--) { if (player.isCollidingWith(lifeGummies[i])) { player.gainLife(); lifeGummies.splice(i, 1); if (player.lives >= (difficulty === 'hard' ? 4 : player.maxLives)) { gameState = 'win'; } } }
 }
 
 function advanceGameState() {
   let vX, vY;
   if(touches.length > 0) { vX = (touches[0].x - offsetX) / scaleFactor; vY = (touches[0].y - offsetY) / scaleFactor; }
-  else { vX = getVirtualMouseX(); vY = getVirtualMouseY(); }
+  else { vX = mouseX !== undefined ? (mouseX - offsetX) / scaleFactor : 0; vY = mouseY !== undefined ? (mouseY - offsetY) / scaleFactor : 0; }
   if (gameState === 'start') {
-    let btnX = VIRTUAL_WIDTH / 2, btnY = VIRTUAL_HEIGHT / 2 + 100, btnW = 400, btnH = 90;
-    if (vX > btnX - btnW / 2 && vX < btnX + btnW / 2 && vY > btnY - btnH / 2 && vY < btnY + btnH / 2) {
+    let btnX = VIRTUAL_WIDTH / 2, btnW = 400, btnH = 90;
+    let btnNormalY = VIRTUAL_HEIGHT / 2;
+    let btnHardY = VIRTUAL_HEIGHT / 2 + 120;
+    // Check which button is pressed
+    if (vX > btnX - btnW / 2 && vX < btnX + btnW / 2 && vY > btnNormalY - btnH / 2 && vY < btnNormalY + btnH / 2) {
+      difficulty = 'normal';
+      selectedMode = 0;
+      resetGame();
+      gameState = 'playing';
+      if (soundtrack && soundtrack.isLoaded()) {
+        soundtrack.setLoop(true);
+        soundtrack.play();
+      }
+    } else if (vX > btnX - btnW / 2 && vX < btnX + btnW / 2 && vY > btnHardY - btnH / 2 && vY < btnHardY + btnH / 2) {
+      difficulty = 'hard';
+      selectedMode = 1;
       resetGame();
       gameState = 'playing';
       if (soundtrack && soundtrack.isLoaded()) {
@@ -184,33 +207,82 @@ function advanceGameState() {
     gameState = 'start';
   }
 }
+
 function keyPressed() {
-  if (keyCode === ENTER) {
-    if (gameState === 'start') {
+  if (gameState === 'start') {
+    if (keyCode === UP_ARROW || keyCode === 87) selectedMode = 0;
+    if (keyCode === DOWN_ARROW || keyCode === 83) selectedMode = 1;
+    if (keyCode === ENTER) {
+      difficulty = selectedMode === 0 ? 'normal' : 'hard';
       resetGame();
       gameState = 'playing';
       if (soundtrack && soundtrack.isLoaded()) {
         soundtrack.setLoop(true);
         soundtrack.play();
       }
-    } else if (gameState === 'gameOver' || gameState === 'win') {
-      if (soundtrack && soundtrack.isPlaying()) soundtrack.stop();
-      resetGame();
-      gameState = 'start';
     }
+  } else if (keyCode === ENTER && (gameState === 'gameOver' || gameState === 'win')) {
+    if (soundtrack && soundtrack.isPlaying()) soundtrack.stop();
+    resetGame();
+    gameState = 'start';
   }
 }
+
 function mousePressed() { advanceGameState(); }
 function touchStarted() { advanceGameState(); return false; }
 function resetGame() { score = 0; vials = []; enemies = []; lifeGummies = []; player = new GummyBear(); enemySpawnCounter = 0; nextLifeSpawnThreshold = 25; frameCount = 0; }
 
-function drawStartScreen() { background(20, 10, 30); textAlign(CENTER, CENTER); fill(50, 255, 150); textSize(120); text("LSDGB", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 200); fill(255); textSize(24); text("Desktop: Use ARROW/WASD to move, HOLD SPACE to shoot.", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 90); text("Mobile: Use on-screen controls to move and shoot.", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 50); text("Collect 3 lives to win!", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 10); let btnX = VIRTUAL_WIDTH / 2, btnY = VIRTUAL_HEIGHT / 2 + 100, btnW = 400, btnH = 90; let pulse = sin(frameCount * 0.05) * 5; stroke(255, 0, 255); strokeWeight(4); fill(20, 10, 30, 200); rect(btnX, btnY, btnW + pulse, btnH + pulse/2, 10); noStroke(); fill(255, 0, 255); textSize(36); text("START REVOLUTION", btnX, btnY); fill(255); textSize(20); text("(Tap button or press ENTER)", btnX, btnY + 70); }
+function drawStartScreen() {
+  background(20, 10, 30);
+  textAlign(CENTER, CENTER);
+  fill(50, 255, 150);
+  textSize(120);
+  text("LSDGB", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 200);
+  fill(255);
+  textSize(24);
+  text("Select Your Difficulty", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 90);
+
+  // Button positions
+  let btnNormalY = VIRTUAL_HEIGHT / 2;
+  let btnHardY = VIRTUAL_HEIGHT / 2 + 120;
+  let btnW = 400, btnH = 90;
+
+  // Visual feedback (pulse effect)
+  let pulse = sin(frameCount * 0.05) * 5;
+  strokeWeight(4);
+  stroke(255, 0, 255);
+  fill(20, 10, 30, 200);
+  rect(VIRTUAL_WIDTH / 2, btnNormalY, btnW + (selectedMode === 0 ? pulse : 0), btnH + (selectedMode === 0 ? pulse/2 : 0), 10);
+  rect(VIRTUAL_WIDTH / 2, btnHardY, btnW + (selectedMode === 1 ? pulse : 0), btnH + (selectedMode === 1 ? pulse/2 : 0), 10);
+
+  noStroke();
+  fill(selectedMode === 0 ? [0,255,0] : [255,0,255]);
+  textSize(36);
+  text("NORMAL MODE", VIRTUAL_WIDTH / 2, btnNormalY);
+  fill(selectedMode === 1 ? [255,0,0] : [255,0,255]);
+  text("HARD MODE", VIRTUAL_WIDTH / 2, btnHardY);
+
+  fill(255);
+  textSize(20);
+  text("(Tap mode button or press ENTER)", VIRTUAL_WIDTH / 2, btnHardY + 70);
+}
+
 function drawWinScreen() { background(20, 100, 80); textAlign(CENTER, CENTER); fill(255, 255, 0); textSize(72); text("REVOLUTION SUCCEEDS!", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 80); fill(255); textSize(40); text(`Final Score: ${score}`, VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 + 20); textSize(30); text("Tap or press ENTER to play again", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 + 100); }
 function drawGameOverScreen() { background(20, 10, 30); textAlign(CENTER, CENTER); fill(255, 0, 0); textSize(72); text("THE MAN WINS", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 80); fill(255); textSize(40); text(`Final Score: ${score}`, VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 + 20); textSize(30); text("Tap or press ENTER to try again", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 + 100); }
-function drawHUD() { fill(255, 0, 255); textSize(40); textAlign(LEFT, TOP); text(`SCORE: ${score}`, PLAYABLE_OFFSET_X + 20, 20); text(`LIVES: ${player.lives}`, PLAYABLE_OFFSET_X + 20, 70); }
+function drawHUD() {
+  if (difficulty === 'hard') {
+    fill(255, 0, 0); // Red for danger in hard mode
+  } else {
+    fill(255, 0, 255);
+  }
+  textSize(40);
+  textAlign(LEFT, TOP);
+  text(`SCORE: ${score}`, PLAYABLE_OFFSET_X + 20, 20);
+  text(`LIVES: ${player.lives}`, PLAYABLE_OFFSET_X + 20, 70);
+}
 
 class GummyBear {
-  constructor() { this.x = VIRTUAL_WIDTH / 2; this.y = VIRTUAL_HEIGHT - 80; this.w = 50; this.h = 60; this.speed = 8; this.hue = random(360); this.lives = 1; this.maxLives = 3; this.baseShootCooldown = 35; this.fastestShootCooldown = 5; this.scoreForMaxSpeed = 50; this.shootCooldown = this.baseShootCooldown; this.lastShotFrame = 0; }
+  constructor() { this.x = VIRTUAL_WIDTH / 2; this.y = VIRTUAL_HEIGHT - 80; this.w = 50; this.h = 60; this.speed = 8; this.hue = random(360); this.lives = difficulty === 'hard' ? 1 : 1; this.maxLives = difficulty === 'hard' ? 2 : 3; this.baseShootCooldown = 35; this.fastestShootCooldown = 5; this.scoreForMaxSpeed = 50; this.shootCooldown = this.baseShootCooldown; this.lastShotFrame = 0; }
   update() { let effectiveScore = max(0, score); this.shootCooldown = map(effectiveScore, 0, this.scoreForMaxSpeed, this.baseShootCooldown, this.fastestShootCooldown); this.shootCooldown = constrain(this.shootCooldown, this.fastestShootCooldown, this.baseShootCooldown); }
   move() { if (keyIsDown(LEFT_ARROW) || keyIsDown(65) || (isMobile && touchControls.dpad.isLeft)) this.x -= this.speed; if (keyIsDown(RIGHT_ARROW) || keyIsDown(68) || (isMobile && touchControls.dpad.isRight)) this.x += this.speed; if (keyIsDown(UP_ARROW) || keyIsDown(87) || (isMobile && touchControls.dpad.isUp)) this.y -= this.speed; if (keyIsDown(DOWN_ARROW) || keyIsDown(83) || (isMobile && touchControls.dpad.isDown)) this.y += this.speed; this.x = constrain(this.x, PLAYABLE_OFFSET_X + this.w/2, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH - this.w/2); this.y = constrain(this.y, this.h / 2, VIRTUAL_HEIGHT - this.h / 2); this.hue = (this.hue + 1) % 360; }
   display() {
@@ -226,7 +298,7 @@ class GummyBear {
   isCollidingWith(other) { return dist(this.x, this.y, other.x, other.y) < this.w / 2 + other.w / 2; }
 }
 class LifeGummy {
-    constructor() { this.x = random(PLAYABLE_OFFSET_X + 20, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH - 20); this.y = -50; this.w = 40; this.h = 50; this.speed = 2.5; this.hue = random(360); this.hits = 3; this.toBeRemoved = false; this.lastHitTime = 0; this.animFrame = 0; }
+    constructor() { this.x = random(PLAYABLE_OFFSET_X + 20, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH - 20); this.y = -50; this.w = 40; this.h = 50; this.speed = 2.5; this.hue = random(360); this.hits = difficulty === 'hard' ? 5 : 3; this.toBeRemoved = false; this.lastHitTime = 0; this.animFrame = 0; }
     update() { this.y += this.speed; this.hue = (this.hue + 2) % 360; if (frameCount % 10 === 0) { this.animFrame = (this.animFrame + 1) % lifeGummyFrames.length; } }
     takeHit() { this.hits--; this.lastHitTime = millis(); if (this.hits <= 0) { this.toBeRemoved = true; } }
     display() {
@@ -295,7 +367,15 @@ class Suit extends Enemy {
       }
     }
   }
-  revertToAngrySuit(target) { this.state = 'angry_suit'; this.speed = 5; let dx = target.x - this.x; let dy = VIRTUAL_HEIGHT; let direction = createVector(dx, dy); direction.normalize(); this.chaseVector = direction; }
+  revertToAngrySuit(target) {
+    this.state = 'angry_suit';
+    this.speed = difficulty === 'hard' ? 7 : 5; // Faster in hard mode
+    let dx = target.x - this.x;
+    let dy = VIRTUAL_HEIGHT;
+    let direction = createVector(dx, dy);
+    direction.normalize();
+    this.chaseVector = direction;
+  }
   displayAsSuit() {
     noStroke();
     if (this.state === 'angry_suit') {
@@ -322,7 +402,7 @@ class Cop extends Enemy {
     super();
     this.state = 'cop';
     this.speed = random(2, 4.5);
-    this.hits = 3;
+    this.hits = difficulty === 'hard' ? 5 : 3;
     this.lastHitTime = 0;
     this.animFrame = 0;
   }
@@ -365,5 +445,5 @@ class Cop extends Enemy {
     }
   }
   takeHit() { this.hits--; this.lastHitTime = millis(); if (this.hits <= 0) this.transform(); }
-  displayAsCop() { noStroke(); fill(20, 30, 120); rect(this.x, this.y, this.w, this.h, 5); fill(220); ellipse(this.x, this.y - this.h / 2 - 15, 30); fill(20, 30, 120); rect(this.x, this.y - this.h / 2 - 25, 40, 10, 2); rect(this.x, this.y - this.h / 2 - 30, 25, 10, 2); fill(255, 215, 0); ellipse(this.x - 10, this.y - 15, 8, 10); }
+  displayAsCop() { noStroke(); fill(20, 30, 120); rect(this.x, this.x, this.w, this.h, 5); fill(220); ellipse(this.x, this.y - this.h / 2 - 15, 30); fill(20, 30, 120); rect(this.x, this.y - this.h / 2 - 25, 40, 10, 2); rect(this.x, this.y - this.h / 2 - 30, 25, 10, 2); fill(255, 215, 0); ellipse(this.x - 10, this.y - 15, 8, 10); }
 }

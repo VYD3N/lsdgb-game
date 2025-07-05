@@ -44,26 +44,45 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 5. **Life Gummy Strategy:** The extra-life gummy bear now takes 3 hits to destroy and is animated with 2 frames. It flashes white when hit, so plan your shots carefully to avoid losing your chance at an extra life!
 6. **Watch your fire rate**: As your score increases, you'll shoot faster and enemies will spawn more frequently!
 
+## Difficulty Levels
+
+### Normal Mode
+- Classic gameplay with standard difficulty.
+- Grass background (`grass.png`).
+- Player starts with 1 life, max 3 lives, win at 3.
+- Life gummies and cops require 3 hits.
+- Suits and angry suits have standard speed.
+- Game over at -5 score.
+
+### Hard Mode (New!)
+- Increased enemy speed and spawn rate.
+- Player starts with 1 life, max 2 lives, win at 4.
+- Life gummies and cops require 5 hits.
+- Angry suits move faster and chase more aggressively.
+- Game over at -3 score.
+- HUD is red for extra tension.
+- **Parking lot background** (`parkinglot.png`) for a more intense vibe.
+
 ## Game Features
 - **4:3 Playable Area:** All gameplay is confined to a central 4:3 region, with controls in dedicated sidebars.
 - **Controls Anchored to Corners:** D-pad and fire button are maximally distant from the playfield for comfort and visibility.
 - **Visual Boundaries:** Faint lines show the playfield edges for clarity.
-- **Life Gummy is Animated:** Extra-life gummies use a 2-frame sprite and require three hits, flashing white when damaged.
+- **Life Gummy is Animated:** Extra-life gummies use a 2-frame sprite and require three hits (five in hard mode), flashing white when damaged.
 - **All Characters Animated:** Player, suits, cops, hippies, angry suits, and life gummy all use 2-frame image-based sprites for smooth animation.
 - **Dynamic Fire Rate**: Your shooting speed increases with your score
 - **Adaptive Spawning**: Enemy spawn rate increases as you perform better
 - **Life System**: Collect gummy life power-ups every 25 points
 - **Enemy Types**: 
   - **Suits**: Convert to hippies with 1 hit
-  - **Cops**: Require 3 hits to convert, and can revert hippies back to angry suits! (Note: Only hippies that originated as Suits can be reverted. This logic could be adapted for an 'ultra boss' scenario in future versions.)
+  - **Cops**: Require 3 hits to convert (5 in hard mode), and can revert hippies back to angry suits! (Note: Only hippies that originated as Suits can be reverted. This logic could be adapted for an 'ultra boss' scenario in future versions.)
 - **Responsive Canvas**: Game scales perfectly on any screen size
 - **Touch Support**: Full mobile and tablet support with a professional, large, corner-anchored circular D-pad (no dead zone, visual feedback) and a dedicated fire button
 - **Landscape Mode**: Enforced for best mobile experience
-- **Tiled Background:** The grass background is tiled vertically to fill the browser window.
+- **Tiled Background:** The grass background is tiled vertically to fill the browser window in normal mode; the parking lot background is used in hard mode.
 
 ## Assets
 - **All image and sound assets must be present in the project directory for full functionality:**
-  - `gummy.png`, `suit1.png`, `suit2.png`, `cop1.png`, `cop2.png`, `hippie1.png`, `hippie2.png`, `angrysuit1.png`, `angrysuit2.png`, `lifegummy1.png`, `lifegummy2.png`, `grass.png`
+  - `gummy.png`, `suit1.png`, `suit2.png`, `cop1.png`, `cop2.png`, `hippie1.png`, `hippie2.png`, `angrysuit1.png`, `angrysuit2.png`, `lifegummy1.png`, `lifegummy2.png`, `grass.png`, `parkinglot.png`
   - `shooting.mp3`, `soundtrack.mp3`, `gummybear.mp3`
 
 ## Local Setup
