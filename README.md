@@ -57,12 +57,13 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 ### Hard Mode (New!)
 - Increased enemy speed and spawn rate.
 - Player starts with 1 life, max 2 lives, win at 4.
-- Life gummies and cops require 5 hits.
+- Life gummies and cops require 3 hits.
 - Angry suits move faster and chase more aggressively.
 - Game over at -3 score.
 - HUD is red for extra tension.
 - **Parking lot background** (`parkinglot.png`) for a more intense vibe.
 - **Unique soundtrack** (`soundtrack2.mp3`) for Hard Mode.
+- **FormerCop**: When a Cop is converted, it becomes a FormerCop (not a hippie). FormerCops have unique slogans (e.g., "Werk It", "Rainbow!", etc.), a 2-frame animation, and float down the screen. If a Suit touches a FormerCop, the Suit is slowed for 3 seconds. FormerCops are allies and cannot be harmed.
 
 ## Game Features
 - **4:3 Playable Area:** All gameplay is confined to a central 4:3 region, with controls in dedicated sidebars.
@@ -75,28 +76,27 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 - **Life System**: Collect gummy life power-ups every 25 points
 - **Enemy Types**: 
   - **Suits**: Convert to hippies with 1 hit
-  - **Cops**: Require 3 hits to convert (5 in hard mode), and can revert hippies back to angry suits! (Note: Only hippies that originated as Suits can be reverted. This logic could be adapted for an 'ultra boss' scenario in future versions.)
+  - **Cops**: Require 3 hits to convert, and can revert hippies back to angry suits! (Note: Only hippies that originated as Suits can be reverted. This logic could be adapted for an 'ultra boss' scenario in future versions.)
 - **Responsive Canvas**: Game scales perfectly on any screen size
 - **Touch Support**: Full mobile and tablet support with a professional, large, corner-anchored circular D-pad (no dead zone, visual feedback) and a dedicated fire button
 - **Landscape Mode**: Enforced for best mobile experience
 - **Tiled Background:** The grass background is tiled vertically to fill the browser window in normal mode; the parking lot background is used in hard mode.
 
+## Enemies & Allies
+- **Suit**: Standard enemy. Converts to a hippie with 1 hit.
+- **Cop**: Requires 3 hits to convert. When converted, becomes a FormerCop (not a hippie).
+- **Angry Suit**: Chases the player or life gummies more aggressively.
+- **Convict**: Created when a hippie (originating from a cop) is hit by a cop. Convicts chase the player or life gummies, are tough, and use a 2-frame animation (`convict1.png`, `convict2.png`).
+- **FormerCop**: When a Cop is converted, it becomes a FormerCop. FormerCops have unique slogans, a 2-frame animation (`formercop1.png`, `formercop2.png`), and float down the screen. If a Suit touches a FormerCop, the Suit is slowed for 3 seconds. FormerCops are allies and cannot be harmed or harm the player.
+- **Hippie**: Friendly, floats down the screen, cannot harm the player.
+
 ## Assets
 - **All image and sound assets must be present in the project directory for full functionality:**
   - `gummy.png`, `suit1.png`, `suit2.png`, `cop1.png`, `cop2.png`, `hippie1.png`, `hippie2.png`, `angrysuit1.png`, `angrysuit2.png`, `lifegummy1.png`, `lifegummy2.png`, `grass.png`, `parkinglot.png`
+  - `convict1.png`, `convict2.png` — Convict 2-frame animation
+  - `formercop1.png`, `formercop2.png` — FormerCop 2-frame animation
   - `shooting.mp3`, `soundtrack.mp3`, `soundtrack2.mp3`, `gummybear.mp3`
 
 ## Local Setup
 1. Clone this repository:
-   ```sh
-   git clone https://github.com/VYD3N/lsdgb-game.git
    ```
-2. Open `index.html` in your web browser.
-
-No build or install steps are required—just open and play!
-
-## License
-MIT (add your preferred license here)
-
----
-Made with ❤️ and p5.js 

@@ -56,4 +56,10 @@ build/
 !angrysuit.mp3
 
 # Allow favicon.ico in the project root
-!favicon.ico 
+!favicon.ico
+
+# Allow convict1.png, convict2.png, formercop1.png, and formercop2.png to be tracked by git
+!convict1.png
+!convict2.png
+!formercop1.png
+!formercop2.png 

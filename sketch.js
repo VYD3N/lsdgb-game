@@ -21,6 +21,10 @@ let lifeGummyFrames = [];
 let difficulty = 'normal'; // 'normal' or 'hard'
 let selectedMode = 0; // 0 = normal, 1 = hard
 let parkinglotImg;
+let convictFrames = [];
+let formerCopFrames = [];
+const FORMER_COP_SLOGANS = ["Werk It", "Rainbow!", "Out Loud", "True Colors", "Love Wins", "Proud!"];
+let slowedSuits = new Map(); // suit instance -> slowUntil timestamp
 
 // --- VIRTUAL CANVAS & PLAYABLE AREA SETUP ---
 const VIRTUAL_WIDTH = 1280;
@@ -49,6 +53,10 @@ function preload() {
   lifeGummyFrames[0] = loadImage('lifegummy1.png');
   lifeGummyFrames[1] = loadImage('lifegummy2.png');
   parkinglotImg = loadImage('parkinglot.png');
+  convictFrames[0] = loadImage('convict1.png');
+  convictFrames[1] = loadImage('convict2.png');
+  formerCopFrames[0] = loadImage('formercop1.png');
+  formerCopFrames[1] = loadImage('formercop2.png');
 }
 
 function setup() {
@@ -169,9 +177,58 @@ function handleCollisions() {
         }
     }
   }
-  for (let i = enemies.length - 1; i >= 0; i--) { let enemy = enemies[i]; if (enemy.state !== 'hippie' && player.isCollidingWith(enemy)) { player.takeDamage(); enemies.splice(i, 1); if (player.lives <= 0) { gameState = 'gameOver'; return; } } }
-  for (let i = enemies.length - 1; i >= 0; i--) { let enemy = enemies[i]; if (enemy && enemy.state === 'cop') { for (let j = enemies.length - 1; j >= 0; j--) { if (i === j) continue; let other = enemies[j]; /* Only revert hippies that are Suits, not Cops or others. This could be adapted for an ultra boss scenario in the future. */ if (other && other.state === 'hippie' && enemy.isCollidingWith(other) && other instanceof Suit) { other.revertToAngrySuit(player); break; } } } }
+  for (let i = enemies.length - 1; i >= 0; i--) { 
+    let enemy = enemies[i]; 
+    if (enemy.state !== 'hippie' && enemy.state !== 'formercop' && player.isCollidingWith(enemy)) { 
+      player.takeDamage(); 
+      enemies.splice(i, 1); 
+      if (player.lives <= 0) { gameState = 'gameOver'; return; } 
+    } 
+  }
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let enemy = enemies[i];
+    if (enemy && enemy.state === 'cop') {
+      for (let j = enemies.length - 1; j >= 0; j--) {
+        if (i === j) continue;
+        let other = enemies[j];
+        if (other && other.state === 'hippie' && enemy.isCollidingWith(other)) {
+          if (other.origin === 'suit' && other instanceof Suit) {
+            other.revertToAngrySuit(player);
+          } else if (other.origin === 'cop') {
+            // Transform hippie (was cop) into Convict
+            enemies[j] = new Convict(other.x, other.y);
+          }
+          break;
+        }
+      }
+    }
+  }
+  // Convict vs. LifeGummy
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let enemy = enemies[i];
+    if (enemy && enemy.state === 'convict' && lifeGummies.length > 0) {
+      for (let j = lifeGummies.length - 1; j >= 0; j--) {
+        if (dist(enemy.x, enemy.y, lifeGummies[j].x, lifeGummies[j].y) < enemy.w/2 + lifeGummies[j].w/2) {
+          lifeGummies.splice(j, 1);
+          break;
+        }
+      }
+    }
+  }
   for (let i = lifeGummies.length - 1; i >= 0; i--) { if (player.isCollidingWith(lifeGummies[i])) { player.gainLife(); lifeGummies.splice(i, 1); if (player.lives >= (difficulty === 'hard' ? 4 : player.maxLives)) { gameState = 'win'; } } }
+  // Suit vs. FormerCop
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let enemy = enemies[i];
+    if (enemy && enemy.state === 'suit') {
+      for (let j = enemies.length - 1; j >= 0; j--) {
+        if (i === j) continue;
+        let other = enemies[j];
+        if (other && other.state === 'formercop' && enemy.isCollidingWith(other)) {
+          slowedSuits.set(enemy, millis() + 3000); // slow for 3 seconds
+        }
+      }
+    }
+  }
 }
 
 function advanceGameState() {
@@ -329,12 +386,78 @@ class LifeGummy {
     isOffscreen() { return this.y > VIRTUAL_HEIGHT + this.h; }
 }
 class AcidVile { constructor(x, y) { this.x = x; this.y = y; this.r = 12; this.speed = 10; this.hue = random(360); } update() { this.y -= this.speed; this.hue = (this.hue + 5) % 360; } display() { push(); colorMode(HSB, 360, 100, 100, 100); noStroke(); for (let i = 0; i < 3; i++) { let f = random(-2, 2), a = random(60, 90), s = this.r * 2 * random(0.8, 1.2); fill(this.hue, 90, 100, a); ellipse(this.x + f, this.y + f, s); } pop(); } isOffscreen() { return this.y < -this.r; } }
-class Enemy { constructor() { this.x = random(PLAYABLE_OFFSET_X + 20, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH - 20); this.y = -50; this.w = 40; this.h = 70; this.speed = random(1.5, 4); this.hue = random(360); this.transformTime = 0; this.slogan = ""; this.hippieSolidDuration = 7500; this.hippieFadeDuration = 2500; } update(target) { if (this.state === 'angry_suit') { this.x += this.chaseVector.x * this.speed; this.y += this.chaseVector.y * this.speed; } else if (this.state === 'hippie') { this.y += 0.5; this.hue = (this.hue + 1) % 360; } else { this.y += this.speed; } } isHitBy(vile) { return dist(this.x, this.y, vile.x, vile.y) < this.w / 2 + vile.r; } isCollidingWith(other) { return dist(this.x, this.y, other.x, other.y) < this.w / 2 + other.w / 2; } transform() { this.state = 'hippie'; this.transformTime = millis(); this.slogan = SLOGANS[floor(this.hue / (360 / SLOGANS.length))]; } shouldBeRemoved() { if (this.state !== 'hippie') return false; return millis() - this.transformTime > this.hippieSolidDuration + this.hippieFadeDuration; } isOffscreen() { return this.y > VIRTUAL_HEIGHT + this.h || this.y < -this.h || this.x < PLAYABLE_OFFSET_X - this.w || this.x > PLAYABLE_OFFSET_X + PLAYABLE_WIDTH + this.w; } displayAsHippie() { let timeSinceTransform = millis() - this.transformTime; let alpha = 255; if (timeSinceTransform > this.hippieSolidDuration) { alpha = map(timeSinceTransform, this.hippieSolidDuration, this.hippieSolidDuration + this.hippieFadeDuration, 255, 0); } push(); colorMode(HSB, 360, 100, 100, 100); fill(this.hue, 90, 90, map(alpha, 0, 255, 0, 100)); rect(this.x, this.y, this.w, this.h, 5); pop(); stroke(255, alpha); strokeWeight(2); noFill(); ellipse(this.x, this.y - 10, 15); line(this.x, this.y - 17.5, this.x, this.y - 2.5); line(this.x, this.y - 10, this.x - 6, this.y - 4); line(this.x, this.y - 10, this.x + 6, this.y - 4); noStroke(); fill(250, 220, 200, alpha); ellipse(this.x, this.y - this.h / 2 - 15, 30); stroke(139, 69, 19, alpha); strokeWeight(3); line(this.x - 15, this.y - this.h / 2 - 15, this.x - 20, this.y - this.h / 2 + 5); line(this.x + 15, this.y - this.h / 2 - 15, this.x + 20, this.y - this.h / 2 + 5); if (timeSinceTransform < 2500) { push(); let bubbleY = this.y - 70; textSize(16); textAlign(CENTER, CENTER); let sloganWidth = textWidth(this.slogan) + 25; noStroke(); fill(255, 255, 255, 200); rect(this.x, bubbleY, sloganWidth, 35, 15); fill(0); text(this.slogan, this.x, bubbleY); pop(); } } }
+class Enemy {
+  constructor() {
+    this.x = random(PLAYABLE_OFFSET_X + 20, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH - 20);
+    this.y = -50;
+    this.w = 40;
+    this.h = 70;
+    this.speed = random(1.5, 4);
+    this.hue = random(360);
+    this.transformTime = 0;
+    this.slogan = "";
+    this.hippieSolidDuration = 7500;
+    this.hippieFadeDuration = 2500;
+    this.origin = null; // 'suit' or 'cop'
+  }
+  update(target) {
+    if (this.state === 'angry_suit') {
+      this.x += this.chaseVector.x * this.speed;
+      this.y += this.chaseVector.y * this.speed;
+    } else if (this.state === 'hippie') {
+      this.y += 0.5;
+      this.hue = (this.hue + 1) % 360;
+    } else {
+      this.y += this.speed;
+    }
+  }
+  isHitBy(vile) { return dist(this.x, this.y, vile.x, vile.y) < this.w / 2 + vile.r; }
+  isCollidingWith(other) { return dist(this.x, this.y, other.x, other.y) < this.w / 2 + other.w / 2; }
+  transform() {
+    this.state = 'hippie';
+    this.transformTime = millis();
+    this.slogan = SLOGANS[floor(this.hue / (360 / SLOGANS.length))];
+    if (!this.origin) {
+      if (this instanceof Suit) this.origin = 'suit';
+      else if (this instanceof Cop) this.origin = 'cop';
+    }
+  }
+  shouldBeRemoved() { if (this.state !== 'hippie') return false; return millis() - this.transformTime > this.hippieSolidDuration + this.hippieFadeDuration; }
+  isOffscreen() { return this.y > VIRTUAL_HEIGHT + this.h || this.y < -this.h || this.x < PLAYABLE_OFFSET_X - this.w || this.x > PLAYABLE_OFFSET_X + PLAYABLE_WIDTH + this.w; }
+  displayAsHippie() {
+    let timeSinceTransform = millis() - this.transformTime;
+    let alpha = 255;
+    if (timeSinceTransform > this.hippieSolidDuration) {
+      alpha = map(timeSinceTransform, this.hippieSolidDuration, this.hippieSolidDuration + this.hippieFadeDuration, 255, 0);
+    }
+    push(); colorMode(HSB, 360, 100, 100, 100); fill(this.hue, 90, 90, map(alpha, 0, 255, 0, 100)); rect(this.x, this.y, this.w, this.h, 5); pop();
+    stroke(255, alpha); strokeWeight(2); noFill(); ellipse(this.x, this.y - 10, 15); line(this.x, this.y - 17.5, this.x, this.y - 2.5); line(this.x, this.y - 10, this.x - 6, this.y - 4); line(this.x, this.y - 10, this.x + 6, this.y - 4);
+    noStroke(); fill(250, 220, 200, alpha); ellipse(this.x, this.y - this.h / 2 - 15, 30);
+    stroke(139, 69, 19, alpha); strokeWeight(3); line(this.x - 15, this.y - this.h / 2 - 15, this.x - 20, this.y - this.h / 2 + 5); line(this.x + 15, this.y - this.h / 2 - 15, this.x + 20, this.y - this.h / 2 + 5);
+    if (timeSinceTransform < 2500) {
+      push(); let bubbleY = this.y - 70; textSize(16); textAlign(CENTER, CENTER); let sloganWidth = textWidth(this.slogan) + 25; noStroke(); fill(255, 255, 255, 200); rect(this.x, bubbleY, sloganWidth, 35, 15); fill(0); text(this.slogan, this.x, bubbleY); pop();
+    }
+  }
+}
 class Suit extends Enemy {
   constructor() {
     super();
     this.state = 'suit';
     this.animFrame = 0;
+  }
+  update() {
+    let slow = slowedSuits.has(this) && millis() < slowedSuits.get(this);
+    let speedMod = slow ? 0.3 : 1;
+    if (this.state === 'angry_suit') {
+      this.x += this.chaseVector.x * this.speed * speedMod;
+      this.y += this.chaseVector.y * this.speed * speedMod;
+    } else if (this.state === 'hippie') {
+      this.y += 0.5;
+      this.hue = (this.hue + 1) % 360;
+    } else {
+      this.y += this.speed * speedMod;
+    }
+    if (slow && millis() >= slowedSuits.get(this)) slowedSuits.delete(this);
   }
   display() {
     if (this.state === 'hippie') {
@@ -413,7 +536,7 @@ class Cop extends Enemy {
     super();
     this.state = 'cop';
     this.speed = random(2, 4.5);
-    this.hits = difficulty === 'hard' ? 5 : 3;
+    this.hits = 3; // Always 3 hits, even in hard mode
     this.lastHitTime = 0;
     this.animFrame = 0;
   }
@@ -431,7 +554,11 @@ class Cop extends Enemy {
         fill(255, 0, 0, 150);
         rect(this.x, this.y, this.w + 5, this.h + 5, 8);
       }
-    } else if (this.state === 'hippie') {
+    } else if (this.state === 'formercop') {
+      // Should never be called, but fallback
+      (new FormerCop(this.x, this.y)).display();
+    }
+    else if (this.state === 'hippie') {
       if (frameCount % 10 === 0) {
         this.animFrame = (this.animFrame + 1) % hippieFrames.length;
       }
@@ -456,5 +583,108 @@ class Cop extends Enemy {
     }
   }
   takeHit() { this.hits--; this.lastHitTime = millis(); if (this.hits <= 0) this.transform(); }
+  transform() {
+    // Replace this cop with a FormerCop in the enemies array
+    let idx = enemies.indexOf(this);
+    if (idx !== -1) {
+      enemies[idx] = new FormerCop(this.x, this.y);
+    }
+  }
   displayAsCop() { noStroke(); fill(20, 30, 120); rect(this.x, this.x, this.w, this.h, 5); fill(220); ellipse(this.x, this.y - this.h / 2 - 15, 30); fill(20, 30, 120); rect(this.x, this.y - this.h / 2 - 25, 40, 10, 2); rect(this.x, this.y - this.h / 2 - 30, 25, 10, 2); fill(255, 215, 0); ellipse(this.x - 10, this.y - 15, 8, 10); }
+}
+class Convict extends Enemy {
+  constructor(x, y) {
+    super();
+    this.x = x;
+    this.y = y;
+    this.state = 'convict';
+    this.hits = 3;
+    this.animFrame = 0;
+    this.target = null;
+    this.w = 40;
+    this.h = 70;
+  }
+  update() {
+    // Find target: LifeGummy if present, else player
+    if (lifeGummies.length > 0) {
+      // Chase nearest LifeGummy
+      let closest = null;
+      let minDist = Infinity;
+      for (let lg of lifeGummies) {
+        let d = dist(this.x, this.y, lg.x, lg.y);
+        if (d < minDist) { minDist = d; closest = lg; }
+      }
+      this.target = closest;
+    } else {
+      this.target = player;
+    }
+    // Move toward target
+    if (this.target) {
+      let dx = this.target.x - this.x;
+      let dy = this.target.y - this.y;
+      let mag = sqrt(dx*dx + dy*dy);
+      let speed = difficulty === 'hard' ? 6 : 4.5;
+      if (mag > 0) {
+        this.x += (dx / mag) * speed;
+        this.y += (dy / mag) * speed;
+      }
+    }
+    // Animate
+    if (frameCount % 10 === 0) {
+      this.animFrame = (this.animFrame + 1) % convictFrames.length;
+    }
+  }
+  display() {
+    if (convictFrames[this.animFrame]) {
+      image(convictFrames[this.animFrame], this.x - this.w/2, this.y - this.h/2, this.w, this.h);
+    } else {
+      // fallback: orange rectangle
+      fill(255, 120, 0);
+      rect(this.x, this.y, this.w, this.h, 5);
+    }
+  }
+  takeHit() { this.hits--; if (this.hits <= 0) this.toBeRemoved = true; }
+  isOffscreen() { return this.y > VIRTUAL_HEIGHT + this.h || this.y < -this.h || this.x < PLAYABLE_OFFSET_X - this.w || this.x > PLAYABLE_OFFSET_X + PLAYABLE_WIDTH + this.w; }
+}
+class FormerCop extends Enemy {
+  constructor(x, y) {
+    super();
+    this.x = x;
+    this.y = y;
+    this.state = 'formercop';
+    this.animFrame = 0;
+    this.slogan = random(FORMER_COP_SLOGANS);
+    this.w = 40;
+    this.h = 70;
+    this.transformTime = millis(); // Track when it was created
+  }
+  update() {
+    this.y += 0.5;
+    if (frameCount % 10 === 0) {
+      this.animFrame = (this.animFrame + 1) % formerCopFrames.length;
+    }
+  }
+  display() {
+    if (formerCopFrames[this.animFrame]) {
+      image(formerCopFrames[this.animFrame], this.x - this.w/2, this.y - this.h/2, this.w, this.h);
+      let timeSinceTransform = millis() - this.transformTime;
+      if (timeSinceTransform < 2500) {
+        let bubbleY = this.y - 70;
+        textSize(16);
+        textAlign(CENTER, CENTER);
+        let sloganWidth = textWidth(this.slogan) + 25;
+        noStroke();
+        fill(255, 255, 255, 200);
+        rect(this.x, bubbleY, sloganWidth, 35, 15);
+        fill(0);
+        text(this.slogan, this.x, bubbleY);
+      }
+    } else {
+      // fallback: blue rectangle
+      fill(80, 180, 255);
+      rect(this.x, this.y, this.w, this.h, 5);
+    }
+  }
+  takeHit() { this.toBeRemoved = true; }
+  isOffscreen() { return this.y > VIRTUAL_HEIGHT + this.h || this.y < -this.h || this.x < PLAYABLE_OFFSET_X - this.w || this.x > PLAYABLE_OFFSET_X + PLAYABLE_WIDTH + this.w; }
 }
