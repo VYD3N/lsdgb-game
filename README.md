@@ -11,11 +11,13 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 - **Controls Anchored to Corners:** The D-pad and fire button are now anchored to the absolute bottom-left and bottom-right corners of the screen, maximizing comfort and keeping the playfield completely unobstructed.
 - **Maximized Distance & Size:** Both controls are as far from the playfield as possible and are larger for easy, ergonomic use.
 - **Visual Boundaries:** Faint lines mark the edges of the playfield for clarity.
-- **Life Gummy Takes 3 Hits:** The extra-life gummy bear now requires three hits to disappear, flashing white each time it takes damage for clear feedback.
+- **Life Gummy is Animated:** The extra-life gummy bear now uses a 2-frame animated sprite (`lifegummy1.png`, `lifegummy2.png`) for a lively effect, just like the player and enemies.
+- **All Characters Use Sprites:** The player, suits, cops, hippies, angry suits, and life gummy all use 2-frame image-based sprites for smooth animation.
 - Convert suits and cops into hippies with your acid vials.
 - Collect life gummies to increase your lives. Reach 3 lives to win!
 - **Dynamic difficulty**: Your fire rate and enemy spawn rate are tied to your score - the better you do, the faster you shoot and the more enemies spawn!
 - **Responsive design**: The game scales to fit any screen size while maintaining the same gameplay experience.
+- **Tiled Background:** The grass background (`grass.png`) is tiled vertically to fill the entire browser canvas, ensuring a seamless look on all screen sizes.
 
 ## Sound Effects
 - **p5.sound** is used for audio support.
@@ -39,14 +41,15 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 2. **Move** your gummy bear using keyboard (desktop) or the large circular D-pad (mobile) to dodge enemies and collect life gummies.
 3. **Shoot** acid vials using spacebar (desktop) or the red fire button (mobile) to convert enemies into hippies.
 4. **Collect 3 lives** to win. If you lose all your lives or your score drops below -5, the game is over.
-5. **Life Gummy Strategy:** The extra-life gummy bear now takes 3 hits to destroy. It flashes white when hit, so plan your shots carefully to avoid losing your chance at an extra life!
+5. **Life Gummy Strategy:** The extra-life gummy bear now takes 3 hits to destroy and is animated with 2 frames. It flashes white when hit, so plan your shots carefully to avoid losing your chance at an extra life!
 6. **Watch your fire rate**: As your score increases, you'll shoot faster and enemies will spawn more frequently!
 
 ## Game Features
 - **4:3 Playable Area:** All gameplay is confined to a central 4:3 region, with controls in dedicated sidebars.
 - **Controls Anchored to Corners:** D-pad and fire button are maximally distant from the playfield for comfort and visibility.
 - **Visual Boundaries:** Faint lines show the playfield edges for clarity.
-- **Life Gummy Takes 3 Hits:** Extra-life gummies require three hits and flash white when damaged.
+- **Life Gummy is Animated:** Extra-life gummies use a 2-frame sprite and require three hits, flashing white when damaged.
+- **All Characters Animated:** Player, suits, cops, hippies, angry suits, and life gummy all use 2-frame image-based sprites for smooth animation.
 - **Dynamic Fire Rate**: Your shooting speed increases with your score
 - **Adaptive Spawning**: Enemy spawn rate increases as you perform better
 - **Life System**: Collect gummy life power-ups every 25 points
@@ -56,6 +59,12 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 - **Responsive Canvas**: Game scales perfectly on any screen size
 - **Touch Support**: Full mobile and tablet support with a professional, large, corner-anchored circular D-pad (no dead zone, visual feedback) and a dedicated fire button
 - **Landscape Mode**: Enforced for best mobile experience
+- **Tiled Background:** The grass background is tiled vertically to fill the browser window.
+
+## Assets
+- **All image and sound assets must be present in the project directory for full functionality:**
+  - `gummy.png`, `suit1.png`, `suit2.png`, `cop1.png`, `cop2.png`, `hippie1.png`, `hippie2.png`, `angrysuit1.png`, `angrysuit2.png`, `lifegummy1.png`, `lifegummy2.png`, `grass.png`
+  - `shooting.mp3`, `soundtrack.mp3`, `gummybear.mp3`
 
 ## Local Setup
 1. Clone this repository:
