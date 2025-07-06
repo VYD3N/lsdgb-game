@@ -79,6 +79,10 @@ function setup() {
   if (getAudioContext().state !== 'running') {
     getAudioContext().resume();
   }
+  // Fix: force recalculation after a short delay to ensure centering
+  setTimeout(() => {
+    windowResized();
+  }, 100);
 }
 
 function draw() {
