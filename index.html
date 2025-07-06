@@ -11,13 +11,15 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
       html, body {
-        height: 100%;
-        width: 100%;
+        width: 100vw;
+        height: 100vh;
         margin: 0;
         padding: 0;
         overflow: hidden;
         background: #222;
-        touch-action: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       body {
         -webkit-touch-callout: none;
@@ -31,11 +33,9 @@
       }
       canvas {
         display: block;
-        position: absolute;
-        top: 0; left: 0;
-        width: 100vw;
-        height: 100vh;
-        touch-action: none;
+        margin: auto;
+        background: #222;
+        box-shadow: 0 0 32px #0008;
       }
       /*
         NOTE: The D-pad and fire button are drawn by p5.js in sketch.js.

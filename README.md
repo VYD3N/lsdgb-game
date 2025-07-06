@@ -1,5 +1,7 @@
 # LSDGB
 
+![LSDGB Logo](lsdgb-logo.png)
+
 A psychedelic arcade browser game inspired by classic shooters and trippy vibes.
 
 ## Play Online
@@ -7,7 +9,9 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 
 ## Game Description
 - **LSDGB** ("LSD Gummy Bear") is a fast-paced, colorful shooter where you play as a groovy gummy bear fighting off conformity!
-- **4:3 Playable Area:** The game action is strictly confined to a central 4:3 area (960x720) within a widescreen 16:9 canvas (1280x720). This ensures the controls never overlap the playfield.
+- **New Logo:** The start screen now features a vibrant, psychedelic LSDGB logo (`lsdgb-logo.png`) for a professional and eye-catching introduction.
+- **4:3 Playable Area:** The game action is strictly confined to a central 4:3 area (960x720) within a widescreen 16:9 canvas (1280x720). The canvas always maintains a 4:3 aspect ratio, centered in the browser window, with sidebars or letterboxing as needed. This ensures the controls never overlap the playfield and the game never appears stretched or squished, regardless of device or window size.
+- **Responsive, Cross-Device Design:** The game is fully responsive and works on desktops, laptops, tablets, and phones. The canvas is always centered, and the play area is never distorted. Landscape mode is enforced on mobile for the best experience.
 - **Controls Anchored to Corners:** The D-pad and fire button are now anchored to the absolute bottom-left and bottom-right corners of the screen, maximizing comfort and keeping the playfield completely unobstructed.
 - **Maximized Distance & Size:** Both controls are as far from the playfield as possible and are larger for easy, ergonomic use.
 - **Visual Boundaries:** Faint lines mark the edges of the playfield for clarity.
@@ -16,8 +20,13 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 - Convert suits and cops into hippies with your acid vials.
 - Collect life gummies to increase your lives. Reach 3 lives to win!
 - **Dynamic difficulty**: Your fire rate and enemy spawn rate are tied to your score - the better you do, the faster you shoot and the more enemies spawn!
-- **Responsive design**: The game scales to fit any screen size while maintaining the same gameplay experience.
 - **Tiled Background:** The grass background (`grass.png`) is tiled vertically to fill the entire browser canvas, ensuring a seamless look on all screen sizes.
+
+## Visual Polish & Accessibility
+- **Psychedelic Logo:** The start screen features a custom, colorful logo (`lsdgb-logo.png`).
+- **Modern Start Screen:** Difficulty buttons and instructions are visually balanced, with a clear "How to Play" panel and improved spacing.
+- **Aspect Ratio Enforcement:** The game always appears in a classic, tall 4:3 area, never stretched or squished, for a consistent experience on all devices.
+- **Canvas Centering:** The canvas is always centered in the browser window, with sidebars or letterboxing as needed.
 
 ## Sound Effects
 - **p5.sound** is used for audio support.
@@ -92,6 +101,7 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 
 ## Assets
 - **All image and sound assets must be present in the project directory for full functionality:**
+  - `lsdgb-logo.png` — Start screen logo
   - `gummy.png`, `suit1.png`, `suit2.png`, `cop1.png`, `cop2.png`, `hippie1.png`, `hippie2.png`, `angrysuit1.png`, `angrysuit2.png`, `lifegummy1.png`, `lifegummy2.png`, `grass.png`, `parkinglot.png`
   - `convict1.png`, `convict2.png` — Convict 2-frame animation
   - `formercop1.png`, `formercop2.png` — FormerCop 2-frame animation

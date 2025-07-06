@@ -7,7 +7,9 @@ const SLOGANS = ["Flower Power", "Groovy", "Far Out", "Cowabunga", "Trippy", "Gu
 let gameState = 'start'; // 'start', 'playing', 'gameOver', 'win'
 let enemySpawnCounter = 0;
 let nextLifeSpawnThreshold = 25;
-let shootingSound;
+let shootingSounds = [];
+const SHOOTING_POOL_SIZE = 8;
+let shootingSoundIndex = 0;
 let soundtrack;
 let soundtrack2;
 let gummyBearSound;
@@ -25,6 +27,8 @@ let convictFrames = [];
 let formerCopFrames = [];
 const FORMER_COP_SLOGANS = ["Werk It", "Rainbow!", "Out Loud", "True Colors", "Love Wins", "Proud!"];
 let slowedSuits = new Map(); // suit instance -> slowUntil timestamp
+let audioContextResumed = false; // Track if we've resumed audio context
+let lsdgbLogo;
 
 // --- VIRTUAL CANVAS & PLAYABLE AREA SETUP ---
 const VIRTUAL_WIDTH = 1280;
@@ -36,7 +40,9 @@ let isMobile = false;
 let touchControls = {};
 
 function preload() {
-  shootingSound = loadSound('shooting.mp3');
+  for (let i = 0; i < SHOOTING_POOL_SIZE; i++) {
+    shootingSounds[i] = loadSound('shooting.mp3');
+  }
   soundtrack = loadSound('soundtrack.mp3');
   soundtrack2 = loadSound('soundtrack2.mp3');
   gummyBearSound = loadSound('gummybear.mp3');
@@ -57,16 +63,22 @@ function preload() {
   convictFrames[1] = loadImage('convict2.png');
   formerCopFrames[0] = loadImage('formercop1.png');
   formerCopFrames[1] = loadImage('formercop2.png');
+  lsdgbLogo = loadImage('lsdgb-logo.png');
 }
 
 function setup() {
+  calculateScaling();
   createCanvas(windowWidth, windowHeight);
   isMobile = ('ontouchstart' in window);
-  calculateScaling();
   setupTouchControls();
   rectMode(CENTER);
   textFont('monospace');
   player = new GummyBear();
+  
+  // Resume audio context on first user interaction
+  if (getAudioContext().state !== 'running') {
+    getAudioContext().resume();
+  }
 }
 
 function draw() {
@@ -91,11 +103,29 @@ function draw() {
 }
 
 function calculateScaling() {
-  scaleFactor = min(windowWidth / VIRTUAL_WIDTH, windowHeight / VIRTUAL_HEIGHT);
-  offsetX = (windowWidth - VIRTUAL_WIDTH * scaleFactor) / 2;
-  offsetY = (windowHeight - VIRTUAL_HEIGHT * scaleFactor) / 2;
+  // Force a max aspect ratio (4:3)
+  let targetAspect = 4 / 3;
+  let windowAspect = windowWidth / windowHeight;
+  let canvasW, canvasH;
+
+  if (windowAspect > targetAspect) {
+    // Window is too wide, limit width
+    canvasH = windowHeight;
+    canvasW = canvasH * targetAspect;
+  } else {
+    // Window is too tall, limit height
+    canvasW = windowWidth;
+    canvasH = canvasW / targetAspect;
+  }
+  resizeCanvas(canvasW, canvasH);
+  scaleFactor = min(canvasW / VIRTUAL_WIDTH, canvasH / VIRTUAL_HEIGHT);
+  offsetX = (canvasW - VIRTUAL_WIDTH * scaleFactor) / 2;
+  offsetY = (canvasH - VIRTUAL_HEIGHT * scaleFactor) / 2;
 }
-function windowResized() { resizeCanvas(windowWidth, windowHeight); calculateScaling(); }
+
+function windowResized() {
+  calculateScaling();
+}
 
 function setupTouchControls() {
     let dpadRadius = 160; let fireRadius = 140; let padding = 10;
@@ -139,7 +169,18 @@ function drawTouchControls() {
 }
 
 function runGame() {
-  handleTouchInput(); player.update();
+  handleTouchInput(); 
+  player.update();
+  
+  // Auto-restart soundtrack if it should be playing but isn't
+  if (gameState === 'playing') {
+    let currentSoundtrack = (difficulty === 'hard') ? soundtrack2 : soundtrack;
+    if (currentSoundtrack && currentSoundtrack.isLoaded() && !currentSoundtrack.isPlaying()) {
+      currentSoundtrack.setLoop(true);
+      currentSoundtrack.play();
+    }
+  }
+  
   stroke(255, 255, 255, 20); strokeWeight(4); line(PLAYABLE_OFFSET_X, 0, PLAYABLE_OFFSET_X, VIRTUAL_HEIGHT); line(PLAYABLE_OFFSET_X + PLAYABLE_WIDTH, 0, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH, VIRTUAL_HEIGHT);
   let spawnDelay;
   if (difficulty === 'hard') {
@@ -172,7 +213,7 @@ function handleCollisions() {
     for (let j = lifeGummies.length - 1; j >= 0; j--) {
         if (vials[i] && lifeGummies[j] && lifeGummies[j].isHitBy(vials[i])) {
             lifeGummies[j].takeHit();
-            vials.splice(i, 1);
+      vials.splice(i, 1);
             break;
         }
     }
@@ -210,7 +251,7 @@ function handleCollisions() {
       for (let j = lifeGummies.length - 1; j >= 0; j--) {
         if (dist(enemy.x, enemy.y, lifeGummies[j].x, lifeGummies[j].y) < enemy.w/2 + lifeGummies[j].w/2) {
           lifeGummies.splice(j, 1);
-          break;
+        break; 
         }
       }
     }
@@ -232,6 +273,12 @@ function handleCollisions() {
 }
 
 function advanceGameState() {
+  // Resume audio context on any user interaction
+  if (!audioContextResumed && getAudioContext().state !== 'running') {
+    getAudioContext().resume();
+    audioContextResumed = true;
+  }
+  
   let vX, vY;
   if(touches.length > 0) { vX = (touches[0].x - offsetX) / scaleFactor; vY = (touches[0].y - offsetY) / scaleFactor; }
   else { vX = mouseX !== undefined ? (mouseX - offsetX) / scaleFactor : 0; vY = mouseY !== undefined ? (mouseY - offsetY) / scaleFactor : 0; }
@@ -269,6 +316,12 @@ function advanceGameState() {
 }
 
 function keyPressed() {
+  // Resume audio context on any key press
+  if (!audioContextResumed && getAudioContext().state !== 'running') {
+    getAudioContext().resume();
+    audioContextResumed = true;
+  }
+  
   if (gameState === 'start') {
     if (keyCode === UP_ARROW || keyCode === 87) selectedMode = 0;
     if (keyCode === DOWN_ARROW || keyCode === 83) selectedMode = 1;
@@ -296,32 +349,60 @@ function keyPressed() {
   }
 }
 
-function mousePressed() { advanceGameState(); }
-function touchStarted() { advanceGameState(); return false; }
+function mousePressed() { 
+  // Resume audio context on mouse press
+  if (!audioContextResumed && getAudioContext().state !== 'running') {
+    getAudioContext().resume();
+    audioContextResumed = true;
+  }
+  advanceGameState(); 
+}
+
+function touchStarted() { 
+  // Resume audio context on touch
+  if (!audioContextResumed && getAudioContext().state !== 'running') {
+    getAudioContext().resume();
+    audioContextResumed = true;
+  }
+  advanceGameState(); 
+  return false; 
+}
+
 function resetGame() { score = 0; vials = []; enemies = []; lifeGummies = []; player = new GummyBear(); enemySpawnCounter = 0; nextLifeSpawnThreshold = 25; frameCount = 0; }
 
 function drawStartScreen() {
   background(20, 10, 30);
   textAlign(CENTER, CENTER);
-  fill(50, 255, 150);
-  textSize(120);
-  text("LSDGB", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 200);
+  // Draw the logo image instead of text
+  let logoW = 480; // 600 * 0.8
+  let logoH = 208; // 260 * 0.8
+  let logoY = VIRTUAL_HEIGHT / 2 - 340;
+  if (typeof lsdgbLogo !== 'undefined' && lsdgbLogo) {
+    imageMode(CENTER);
+    image(lsdgbLogo, VIRTUAL_WIDTH / 2, logoY + logoH/2, logoW, logoH);
+    imageMode(CORNER);
+  } else {
+    fill(50, 255, 150);
+    textSize(120);
+    text("LSDGB", VIRTUAL_WIDTH / 2, logoY);
+  }
   fill(255);
-  textSize(24);
-  text("Select Your Difficulty", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 90);
+  textSize(28);
+  let diffLabelY = logoY + logoH + 20;
+  text("Select Your Difficulty", VIRTUAL_WIDTH / 2, diffLabelY);
 
-  // Button positions
-  let btnNormalY = VIRTUAL_HEIGHT / 2;
-  let btnHardY = VIRTUAL_HEIGHT / 2 + 120;
-  let btnW = 400, btnH = 90;
+  // Make buttons about 10% smaller
+  let btnW = 306; // 340 * 0.9
+  let btnH = 68;  // 76 * 0.9
+  let btnNormalY = diffLabelY + 70;
+  let btnHardY = btnNormalY + 85; // slightly less vertical gap for smaller buttons
 
-  // Visual feedback (pulse effect)
   let pulse = sin(frameCount * 0.05) * 5;
   strokeWeight(4);
   stroke(255, 0, 255);
   fill(20, 10, 30, 200);
-  rect(VIRTUAL_WIDTH / 2, btnNormalY, btnW + (selectedMode === 0 ? pulse : 0), btnH + (selectedMode === 0 ? pulse/2 : 0), 10);
-  rect(VIRTUAL_WIDTH / 2, btnHardY, btnW + (selectedMode === 1 ? pulse : 0), btnH + (selectedMode === 1 ? pulse/2 : 0), 10);
+  rect(VIRTUAL_WIDTH / 2, btnNormalY, btnW + (selectedMode === 0 ? pulse : 0), btnH + (selectedMode === 0 ? pulse/2 : 0), 16);
+  rect(VIRTUAL_WIDTH / 2, btnHardY, btnW + (selectedMode === 1 ? pulse : 0), btnH + (selectedMode === 1 ? pulse/2 : 0), 16);
 
   noStroke();
   fill(selectedMode === 0 ? [0,255,0] : [255,0,255]);
@@ -330,9 +411,46 @@ function drawStartScreen() {
   fill(selectedMode === 1 ? [255,0,0] : [255,0,255]);
   text("HARD MODE", VIRTUAL_WIDTH / 2, btnHardY);
 
-  fill(255);
-  textSize(20);
-  text("(Tap mode button or press ENTER)", VIRTUAL_WIDTH / 2, btnHardY + 70);
+  // HOW TO PLAY panel (keep at 185px gap)
+  let instructionsY = btnHardY + 178;
+  let panelW = 700, panelH = 260;
+  let panelX = VIRTUAL_WIDTH / 2;
+  
+  // Panel background
+  noStroke();
+  fill(255, 255, 255, 180);
+  rect(panelX, instructionsY, panelW, panelH, 28);
+  
+  stroke(120, 0, 255, 120);
+  strokeWeight(3);
+  noFill();
+  rect(panelX, instructionsY, panelW, panelH, 28);
+  noStroke();
+
+  fill(30, 10, 40);
+  textSize(24);
+  textAlign(CENTER, TOP);
+  let currentY = instructionsY - panelH / 2 + 22;
+  text("HOW TO PLAY", panelX, currentY);
+  currentY += 38;
+  textSize(18);
+  textAlign(LEFT, TOP);
+  let leftX = panelX - panelW/2 + 36;
+  let rightX = panelX + 30;
+  text("MOVE  :  Arrow keys / WASD", leftX, currentY);
+  text("• drag the on-screen D-pad (touch)", rightX, currentY);
+  currentY += 28;
+  text("FIRE  :  Hold SPACEBAR", leftX, currentY);
+  text("• tap the red button (touch)", rightX, currentY);
+  currentY += 36;
+  textAlign(CENTER, TOP);
+  text("Flip SUITS & COPS into HIPPIES with acid vials.", panelX, currentY);
+  currentY += 26;
+  text("Grab LIFE-GUMMY bears for extra lives.", panelX, currentY);
+  currentY += 32;
+  text("WIN  :  3 lives (Normal) •  4 lives (Hard)", panelX, currentY);
+  currentY += 26;
+  text("LOSE :  Score ≤ -5 (Normal) • ≤ -3 (Hard)", panelX, currentY);
 }
 
 function drawWinScreen() { background(20, 100, 80); textAlign(CENTER, CENTER); fill(255, 255, 0); textSize(72); text("REVOLUTION SUCCEEDS!", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - 80); fill(255); textSize(40); text(`Final Score: ${score}`, VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 + 20); textSize(30); text("Tap or press ENTER to play again", VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2 + 100); }
@@ -349,6 +467,14 @@ function drawHUD() {
   text(`LIVES: ${player.lives}`, PLAYABLE_OFFSET_X + 20, 70);
 }
 
+function playShootingSound() {
+  let sound = shootingSounds[shootingSoundIndex];
+  if (sound && sound.isLoaded()) {
+    sound.play();
+    shootingSoundIndex = (shootingSoundIndex + 1) % SHOOTING_POOL_SIZE;
+  }
+}
+
 class GummyBear {
   constructor() { this.x = VIRTUAL_WIDTH / 2; this.y = VIRTUAL_HEIGHT - 80; this.w = 50; this.h = 60; this.speed = 8; this.hue = random(360); this.lives = difficulty === 'hard' ? 1 : 1; this.maxLives = difficulty === 'hard' ? 2 : 3; this.baseShootCooldown = 35; this.fastestShootCooldown = 5; this.scoreForMaxSpeed = 50; this.shootCooldown = this.baseShootCooldown; this.lastShotFrame = 0; }
   update() { let effectiveScore = max(0, score); this.shootCooldown = map(effectiveScore, 0, this.scoreForMaxSpeed, this.baseShootCooldown, this.fastestShootCooldown); this.shootCooldown = constrain(this.shootCooldown, this.fastestShootCooldown, this.baseShootCooldown); }
@@ -360,7 +486,7 @@ class GummyBear {
       push(); colorMode(HSB, 360, 100, 100, 1); noStroke(); fill(this.hue, 80, 100, 0.8); ellipse(this.x, this.y, this.w, this.h); ellipse(this.x - this.w * 0.3, this.y - this.h * 0.4, this.w * 0.4); ellipse(this.x + this.w * 0.3, this.y - this.h * 0.4, this.w * 0.4); pop();
     }
   }
-  splash() { if (frameCount - this.lastShotFrame > this.shootCooldown) { vials.push(new AcidVile(this.x, this.y - this.h / 4)); this.lastShotFrame = frameCount; if (shootingSound && shootingSound.isLoaded()) shootingSound.play(); } }
+  splash() { if (frameCount - this.lastShotFrame > this.shootCooldown) { vials.push(new AcidVile(this.x, this.y - this.h / 4)); this.lastShotFrame = frameCount; playShootingSound(); } }
   takeDamage() { this.lives--; }
   gainLife() { if (this.lives < this.maxLives) this.lives++; }
   isCollidingWith(other) { return dist(this.x, this.y, other.x, other.y) < this.w / 2 + other.w / 2; }
@@ -472,7 +598,7 @@ class Suit extends Enemy {
           textSize(16);
           textAlign(CENTER, CENTER);
           let sloganWidth = textWidth(this.slogan) + 25;
-          noStroke();
+    noStroke();
           fill(255, 255, 255, 200);
           rect(this.x, bubbleY, sloganWidth, 35, 15);
           fill(0);
@@ -488,7 +614,7 @@ class Suit extends Enemy {
       if (angrySuitFrames[this.animFrame]) {
         image(angrySuitFrames[this.animFrame], this.x - this.w/2, this.y - this.h/2, this.w, this.h);
       } else {
-        this.displayAsSuit();
+      this.displayAsSuit();
       }
     } else {
       if (frameCount % 10 === 0) {
@@ -523,7 +649,7 @@ class Suit extends Enemy {
     if (this.state === 'angry_suit') {
       fill(255, 255, 0);
     } else {
-      fill(200, 0, 0);
+    fill(200, 0, 0);
     }
     triangle(this.x, this.y, this.x - 5, this.y - 25, this.x + 5, this.y - 25);
     fill(220);
@@ -571,10 +697,10 @@ class Cop extends Enemy {
           textSize(16);
           textAlign(CENTER, CENTER);
           let sloganWidth = textWidth(this.slogan) + 25;
-          noStroke();
+    noStroke();
           fill(255, 255, 255, 200);
           rect(this.x, bubbleY, sloganWidth, 35, 15);
-          fill(0);
+      fill(0);
           text(this.slogan, this.x, bubbleY);
         }
       } else {
