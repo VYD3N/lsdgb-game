@@ -11,7 +11,7 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 - **LSDGB** ("LSD Gummy Bear") is a fast-paced, colorful shooter where you play as a groovy gummy bear fighting off conformity!
 - **New Logo:** The start screen now features a vibrant, psychedelic LSDGB logo (`lsdgb-logo.png`) for a professional and eye-catching introduction.
 - **4:3 Playable Area:** The game action is strictly confined to a central 4:3 area (960x720) within a widescreen 16:9 canvas (1280x720). The canvas always maintains a 4:3 aspect ratio, centered in the browser window, with sidebars or letterboxing as needed. This ensures the controls never overlap the playfield and the game never appears stretched or squished, regardless of device or window size.
-- **Responsive, Cross-Device Design:** The game is fully responsive and works on desktops, laptops, tablets, and phones. The canvas is always centered, and the play area is never distorted. Landscape mode is enforced on mobile for the best experience.
+- **Responsive, Cross-Device Design:** The game is fully responsive and works on desktops, laptops, tablets, and phones in any orientation. The canvas is always centered, and the play area is never distorted.
 - **Controls Anchored to Corners:** The D-pad and fire button are now anchored to the absolute bottom-left and bottom-right corners of the screen, maximizing comfort and keeping the playfield completely unobstructed.
 - **Maximized Distance & Size:** Both controls are as far from the playfield as possible and are larger for easy, ergonomic use.
 - **Visual Boundaries:** Faint lines mark the edges of the playfield for clarity.
@@ -44,6 +44,7 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
   - **Move:** Use the large on-screen circular D-pad (anchored to the bottom-left corner, outside the playfield). Touch and drag in any direction for smooth 8-way movement. There is no dead zone—movement is active anywhere inside the D-pad. To stop, simply lift your thumb.
   - **Shoot:** Tap the red fire button (anchored to the bottom-right corner, outside the playfield)
   - **Start/Restart:** Tap the button or press ENTER
+  - **Orientation:** The game works in any device orientation (portrait or landscape)
 
 ## How to Play
 1. **Start the game** by clicking "START REVOLUTION" or pressing ENTER.
@@ -88,7 +89,7 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
   - **Cops**: Require 3 hits to convert, and can revert hippies back to angry suits! (Note: Only hippies that originated as Suits can be reverted. This logic could be adapted for an 'ultra boss' scenario in future versions.)
 - **Responsive Canvas**: Game scales perfectly on any screen size
 - **Touch Support**: Full mobile and tablet support with a professional, large, corner-anchored circular D-pad (no dead zone, visual feedback) and a dedicated fire button
-- **Landscape Mode**: Enforced for best mobile experience
+- **Any Orientation**: Works in portrait or landscape mode on mobile devices
 - **Tiled Background:** The grass background is tiled vertically to fill the browser window in normal mode; the parking lot background is used in hard mode.
 
 ## Enemies & Allies
@@ -107,4 +108,5 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
   - `parkinglot-left.png`, `parkinglot-center.png`, `parkinglot-right.png` — Hard mode background (split for seamless tiling)
   - `grass.png`, `parkinglot.png` (legacy, not used for tiling)
   - `convict1.png`, `convict2.png` — Convict 2-frame animation
-  - `
+  - `formercop1.png`, `formercop2.png` — FormerCop 2-frame animation
+  - `shooting.mp3`, `soundtrack.mp3`, `soundtrack2.mp3`, `gummybear.mp3` — Sound effects and music
