@@ -553,8 +553,8 @@ class GummyBear {
     this.y = VIRTUAL_HEIGHT - this.h / 2; // Start at very bottom of play area
     this.speed = 8;
     this.hue = random(360);
-    this.lives = difficulty === 'hard' ? 1 : 1;
-    this.maxLives = difficulty === 'hard' ? 2 : 3;
+    this.lives = 1;
+    this.maxLives = difficulty === 'hard' ? 4 : 3;
     this.baseShootCooldown = 35;
     this.fastestShootCooldown = 5;
     this.scoreForMaxSpeed = 50;
