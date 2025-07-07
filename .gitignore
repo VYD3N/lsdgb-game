@@ -7,6 +7,7 @@
 !README.md
 !.gitignore
 !*.mp3
+!*.png
 
 # Exclude common development files
 *.log
@@ -62,4 +63,12 @@ build/
 !convict1.png
 !convict2.png
 !formercop1.png
-!formercop2.png 
+!formercop2.png
+
+# Allow the new background images to be tracked by git
+!grass-center.png
+!grass-left.png
+!grass-right.png
+!parkinglot-center.png
+!parkinglot-left.png
+!parkinglot-right.png 
