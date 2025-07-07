@@ -20,7 +20,7 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 - Convert suits and cops into hippies with your acid vials.
 - Collect life gummies to increase your lives. Reach 3 lives to win!
 - **Dynamic difficulty**: Your fire rate and enemy spawn rate are tied to your score - the better you do, the faster you shoot and the more enemies spawn!
-- **Tiled Background:** The grass background (`grass.png`) is tiled vertically to fill the entire browser canvas, ensuring a seamless look on all screen sizes.
+- **Tiled Background:** Both the grass (normal mode) and parking lot (hard mode) backgrounds are split into left, center, and right images for pixel-perfect seamless tiling. The play area is always clear, and the barriers are always flush with the playfield, regardless of screen size.
 
 ## Visual Polish & Accessibility
 - **Psychedelic Logo:** The start screen features a custom, colorful logo (`lsdgb-logo.png`).
@@ -102,11 +102,9 @@ You can play the game by opening `index.html` in your browser on desktop, mobile
 ## Assets
 - **All image and sound assets must be present in the project directory for full functionality:**
   - `lsdgb-logo.png` — Start screen logo
-  - `gummy.png`, `suit1.png`, `suit2.png`, `cop1.png`, `cop2.png`, `hippie1.png`, `hippie2.png`, `angrysuit1.png`, `angrysuit2.png`, `lifegummy1.png`, `lifegummy2.png`, `grass.png`, `parkinglot.png`
+  - `gummy.png`, `suit1.png`, `suit2.png`, `cop1.png`, `cop2.png`, `hippie1.png`, `hippie2.png`, `angrysuit1.png`, `angrysuit2.png`, `lifegummy1.png`, `lifegummy2.png`
+  - `grass-left.png`, `grass-center.png`, `grass-right.png` — Normal mode background (split for seamless tiling)
+  - `parkinglot-left.png`, `parkinglot-center.png`, `parkinglot-right.png` — Hard mode background (split for seamless tiling)
+  - `grass.png`, `parkinglot.png` (legacy, not used for tiling)
   - `convict1.png`, `convict2.png` — Convict 2-frame animation
-  - `formercop1.png`, `formercop2.png` — FormerCop 2-frame animation
-  - `shooting.mp3`, `soundtrack.mp3`, `soundtrack2.mp3`, `gummybear.mp3`
-
-## Local Setup
-1. Clone this repository:
-   ```
+  - `

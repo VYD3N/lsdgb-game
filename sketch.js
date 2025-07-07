@@ -29,6 +29,9 @@ const FORMER_COP_SLOGANS = ["Werk It", "Rainbow!", "Out Loud", "True Colors", "L
 let slowedSuits = new Map(); // suit instance -> slowUntil timestamp
 let audioContextResumed = false; // Track if we've resumed audio context
 let lsdgbLogo;
+let grassLeftImg, grassRightImg, grassCenterImg;
+let parkinglotLeftImg, parkinglotRightImg, parkinglotCenterImg;
+
 
 // --- VIRTUAL CANVAS & PLAYABLE AREA SETUP ---
 const VIRTUAL_WIDTH = 1280;
@@ -55,7 +58,12 @@ function preload() {
   copFrames[1] = loadImage('cop2.png');
   angrySuitFrames[0] = loadImage('angrysuit1.png');
   angrySuitFrames[1] = loadImage('angrysuit2.png');
-  bgImg = loadImage('grass.png');
+  grassLeftImg = loadImage('grass-left.png');
+  grassRightImg = loadImage('grass-right.png');
+  grassCenterImg = loadImage('grass-center.png');
+  parkinglotLeftImg = loadImage('parkinglot-left.png');
+  parkinglotRightImg = loadImage('parkinglot-right.png');
+  parkinglotCenterImg = loadImage('parkinglot-center.png');
   lifeGummyFrames[0] = loadImage('lifegummy1.png');
   lifeGummyFrames[1] = loadImage('lifegummy2.png');
   parkinglotImg = loadImage('parkinglot.png');
@@ -86,11 +94,39 @@ function setup() {
 }
 
 function draw() {
-  // Draw background to fill the entire browser canvas (before scaling/translation)
-  let bgToUse = (difficulty === 'hard' && parkinglotImg) ? parkinglotImg : bgImg;
-  if (bgToUse) {
-    for (let y = 0; y < height; y += bgToUse.height) {
-      image(bgToUse, 0, y, width, bgToUse.height);
+  // Debug logging for objkt.com iframe sizing
+  if (frameCount % 60 === 0) { // Log every 60 frames (once per second)
+    let clientW = document.documentElement.clientWidth;
+    let clientH = document.documentElement.clientHeight;
+    console.log('clientW:', clientW, 'clientH:', clientH, 'canvas.width:', width, 'canvas.height:', height);
+  }
+
+  // Draw background using left, center, and right images for current mode
+  let leftImg = grassLeftImg;
+  let rightImg = grassRightImg;
+  let centerImg = grassCenterImg;
+  if (difficulty === 'hard') {
+    leftImg = parkinglotLeftImg;
+    rightImg = parkinglotRightImg;
+    centerImg = parkinglotCenterImg;
+  }
+  if (leftImg && rightImg && centerImg) {
+    let leftW = leftImg.width;
+    let rightW = rightImg.width;
+    let playY = 0;
+    let playH = height;
+    // Draw left border at canvas edge
+    image(leftImg, 0, playY, leftW, playH);
+    // Draw right border at canvas edge
+    image(rightImg, width - rightW, playY, rightW, playH);
+    // Tile center horizontally between borders
+    let centerStart = leftW;
+    let centerEnd = width - rightW;
+    let x = centerStart;
+    while (x < centerEnd) {
+      let tileW = min(centerImg.width, centerEnd - x);
+      image(centerImg, x, playY, tileW, playH, 0, 0, tileW, centerImg.height);
+      x += tileW;
     }
   } else {
     background(10, 5, 15);
@@ -107,20 +143,29 @@ function draw() {
 }
 
 function calculateScaling() {
-  // Force a max aspect ratio (4:3)
+  // Get actual client dimensions (works better in iframes)
+  let clientW = document.documentElement.clientWidth;
+  let clientH = document.documentElement.clientHeight;
+  
+  // Force 4:3 aspect ratio with integer dimensions
   let targetAspect = 4 / 3;
-  let windowAspect = windowWidth / windowHeight;
+  let clientAspect = clientW / clientH;
   let canvasW, canvasH;
 
-  if (windowAspect > targetAspect) {
-    // Window is too wide, limit width
-    canvasH = windowHeight;
-    canvasW = canvasH * targetAspect;
+  if (clientAspect > targetAspect) {
+    // Client is too wide, limit width
+    canvasH = clientH;
+    canvasW = Math.floor(canvasH * targetAspect);
   } else {
-    // Window is too tall, limit height
-    canvasW = windowWidth;
-    canvasH = canvasW / targetAspect;
+    // Client is too tall, limit height
+    canvasW = clientW;
+    canvasH = Math.floor(canvasW / targetAspect);
   }
+  
+  // Ensure minimum size and integer dimensions
+  canvasW = Math.max(canvasW, 400);
+  canvasH = Math.max(canvasH, 300);
+  
   resizeCanvas(canvasW, canvasH);
   scaleFactor = min(canvasW / VIRTUAL_WIDTH, canvasH / VIRTUAL_HEIGHT);
   offsetX = (canvasW - VIRTUAL_WIDTH * scaleFactor) / 2;
@@ -185,7 +230,10 @@ function runGame() {
     }
   }
   
-  stroke(255, 255, 255, 20); strokeWeight(4); line(PLAYABLE_OFFSET_X, 0, PLAYABLE_OFFSET_X, VIRTUAL_HEIGHT); line(PLAYABLE_OFFSET_X + PLAYABLE_WIDTH, 0, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH, VIRTUAL_HEIGHT);
+  // Remove play area boundary lines (now handled by tree barriers)
+  // stroke(255, 255, 255, 20); strokeWeight(4);
+  // line(PLAYABLE_OFFSET_X, 0, PLAYABLE_OFFSET_X, VIRTUAL_HEIGHT);
+  // line(PLAYABLE_OFFSET_X + PLAYABLE_WIDTH, 0, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH, VIRTUAL_HEIGHT);
   let spawnDelay;
   if (difficulty === 'hard') {
     spawnDelay = floor(map(player.shootCooldown, player.fastestShootCooldown, player.baseShootCooldown, 10, 40));
@@ -210,8 +258,24 @@ function runGame() {
 }
 
 function handleCollisions() {
+  // Vials vs. enemies: allow vials to pass through hippies and formercops
   for (let i = vials.length - 1; i >= 0; i--) {
-    for (let j = enemies.length - 1; j >= 0; j--) { if (vials[i] && enemies[j] && enemies[j].state !== 'hippie' && enemies[j].isHitBy(vials[i])) { enemies[j].takeHit(); if(enemies[j].state === 'hippie') score++; vials.splice(i, 1); break; } }
+    let hitUnfriendly = false;
+    for (let j = enemies.length - 1; j >= 0; j--) {
+      if (
+        vials[i] && enemies[j] &&
+        enemies[j].state !== 'hippie' &&
+        enemies[j].state !== 'formercop' &&
+        enemies[j].isHitBy(vials[i])
+      ) {
+        enemies[j].takeHit();
+        if (enemies[j].state === 'hippie') score++;
+        vials.splice(i, 1);
+        hitUnfriendly = true;
+        break;
+      }
+    }
+    if (hitUnfriendly) continue;
   }
   for (let i = vials.length - 1; i >= 0; i--) {
     for (let j = lifeGummies.length - 1; j >= 0; j--) {
@@ -429,7 +493,7 @@ function drawStartScreen() {
   strokeWeight(3);
   noFill();
   rect(panelX, instructionsY, panelW, panelH, 28);
-  noStroke();
+    noStroke();
 
   fill(30, 10, 40);
   textSize(24);
@@ -480,7 +544,21 @@ function playShootingSound() {
 }
 
 class GummyBear {
-  constructor() { this.x = VIRTUAL_WIDTH / 2; this.y = VIRTUAL_HEIGHT - 80; this.w = 50; this.h = 60; this.speed = 8; this.hue = random(360); this.lives = difficulty === 'hard' ? 1 : 1; this.maxLives = difficulty === 'hard' ? 2 : 3; this.baseShootCooldown = 35; this.fastestShootCooldown = 5; this.scoreForMaxSpeed = 50; this.shootCooldown = this.baseShootCooldown; this.lastShotFrame = 0; }
+  constructor() {
+    this.x = VIRTUAL_WIDTH / 2;
+    this.w = 50;
+    this.h = 60;
+    this.y = VIRTUAL_HEIGHT - this.h / 2; // Start at very bottom of play area
+    this.speed = 8;
+    this.hue = random(360);
+    this.lives = difficulty === 'hard' ? 1 : 1;
+    this.maxLives = difficulty === 'hard' ? 2 : 3;
+    this.baseShootCooldown = 35;
+    this.fastestShootCooldown = 5;
+    this.scoreForMaxSpeed = 50;
+    this.shootCooldown = this.baseShootCooldown;
+    this.lastShotFrame = 0;
+  }
   update() { let effectiveScore = max(0, score); this.shootCooldown = map(effectiveScore, 0, this.scoreForMaxSpeed, this.baseShootCooldown, this.fastestShootCooldown); this.shootCooldown = constrain(this.shootCooldown, this.fastestShootCooldown, this.baseShootCooldown); }
   move() { if (keyIsDown(LEFT_ARROW) || keyIsDown(65) || (isMobile && touchControls.dpad.isLeft)) this.x -= this.speed; if (keyIsDown(RIGHT_ARROW) || keyIsDown(68) || (isMobile && touchControls.dpad.isRight)) this.x += this.speed; if (keyIsDown(UP_ARROW) || keyIsDown(87) || (isMobile && touchControls.dpad.isUp)) this.y -= this.speed; if (keyIsDown(DOWN_ARROW) || keyIsDown(83) || (isMobile && touchControls.dpad.isDown)) this.y += this.speed; this.x = constrain(this.x, PLAYABLE_OFFSET_X + this.w/2, PLAYABLE_OFFSET_X + PLAYABLE_WIDTH - this.w/2); this.y = constrain(this.y, this.h / 2, VIRTUAL_HEIGHT - this.h / 2); this.hue = (this.hue + 1) % 360; }
   display() {
