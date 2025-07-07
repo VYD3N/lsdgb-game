@@ -111,8 +111,10 @@ function draw() {
     centerImg = parkinglotCenterImg;
   }
   if (leftImg && rightImg && centerImg) {
-    let leftW = leftImg.width;
-    let rightW = rightImg.width;
+    // Dynamically scale barriers to max 15% of canvas width each
+    let barrierFrac = 0.15;
+    let leftW = Math.min(leftImg.width, width * barrierFrac);
+    let rightW = Math.min(rightImg.width, width * barrierFrac);
     let playY = 0;
     let playH = height;
     // Draw left border at canvas edge
